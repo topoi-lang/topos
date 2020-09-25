@@ -16,6 +16,8 @@ dependencies:
 - containers
 - mtl
 - optparse-applicative
+- raw-strings-qq
+- regex-tdfa
 - text-short
 
 library:

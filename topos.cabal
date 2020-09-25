@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fc7831eee7f1289532c33bd12f5527d74d09f29560f94d415b8e67f73f2034fa
+-- hash: 9cc61f13fcc90c16f6e92f3898534192ad73284e40e8ef4e0360a4c308a5f1cf
 
 name:           topos
 version:        0.1.0.0
@@ -16,7 +16,8 @@ extra-source-files:
 library
   exposed-modules:
       Parse
-      Parsing.Tokenize
+      Parsing.Tokenizer
+      Parsing.Tokens
   other-modules:
       Paths_topos
   hs-source-dirs:
@@ -29,6 +30,8 @@ library
     , containers
     , mtl
     , optparse-applicative
+    , raw-strings-qq
+    , regex-tdfa
     , text-short
   default-language: Haskell2010
 
@@ -46,6 +49,8 @@ executable topos
     , containers
     , mtl
     , optparse-applicative
+    , raw-strings-qq
+    , regex-tdfa
     , text-short
     , topos
   default-language: Haskell2010
