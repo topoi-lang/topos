@@ -1,0 +1,51 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: fc7831eee7f1289532c33bd12f5527d74d09f29560f94d415b8e67f73f2034fa
+
+name:           topos
+version:        0.1.0.0
+license:        BSD3
+build-type:     Simple
+extra-source-files:
+    readme
+
+library
+  exposed-modules:
+      Parse
+      Parsing.Tokenize
+  other-modules:
+      Paths_topos
+  hs-source-dirs:
+      src
+  default-extensions: OverloadedStrings BlockArguments LambdaCase
+  ghc-options: -Wall
+  build-depends:
+      base
+    , bytestring
+    , containers
+    , mtl
+    , optparse-applicative
+    , text-short
+  default-language: Haskell2010
+
+executable topos
+  main-is: Main.hs
+  other-modules:
+      Paths_topos
+  hs-source-dirs:
+      main
+  default-extensions: OverloadedStrings BlockArguments LambdaCase
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
+  build-depends:
+      base
+    , bytestring
+    , containers
+    , mtl
+    , optparse-applicative
+    , text-short
+    , topos
+  default-language: Haskell2010

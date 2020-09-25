@@ -1,0 +1,35 @@
+name: topos
+version: 0.1.0.0
+license: BSD3
+
+extra-source-files:
+- readme
+
+default-extensions:
+- OverloadedStrings
+- BlockArguments
+- LambdaCase
+
+dependencies:
+- base
+- bytestring
+- containers
+- mtl
+- optparse-applicative
+- text-short
+
+library:
+  source-dirs: src
+  ghc-options: -Wall
+
+executables:
+  topos:
+    main: Main.hs
+    source-dirs: main
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -Wall
+    dependencies:
+    - topos
