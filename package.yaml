@@ -12,13 +12,11 @@ default-extensions:
 
 dependencies:
 - base
-- bytestring
+- bytestring >= 0.10.12.0
 - containers
 - mtl
 - optparse-applicative
-- raw-strings-qq
-- regex-tdfa
-- text-short
+- utf8-string
 
 library:
   source-dirs: src
