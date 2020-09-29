@@ -10,8 +10,11 @@ import Prelude hiding (lex)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import Data.ByteString.Unsafe (unsafeIndex)
-import Data.ByteString.Internal (w2c)
+import Data.ByteString.Internal (w2c, c2w)
 import Data.Word
+import Data.Char
+
+import Debug.Trace
 
 import qualified Parsing.Position as Position
 import qualified Parsing.Span as Span
@@ -75,6 +78,11 @@ lexBS bs = lex State { input = bs
                      , lineColumn = Position.LineColumn 0 0
                      }
 
+-- | A bit switch case that will do all the lexing procedure.
+-- | Noted that the parenthesis is a special case of the token
+
+-- [TODO] maybe we can use pattern synonyms to abstract away the c2w
+-- and pattern matching the char8
 lex :: State -> [Token]
 lex state@State {..}
   | position >= end = [] -- length guard
@@ -90,12 +98,154 @@ lex state@State {..}
 
       token1 = Token lineColumn (Span.Absolute position position1)
       token2 = Token lineColumn (Span.Absolute position position2)
+
+      char8 = index input position
     in
-      case w2c (index input position) of
+      case w2c char8 of
+        ' ' -> lex state1 -- whitespace
+        '\n' -> lex state1 { lineColumn = Position.addLine lineColumn }
         '(' -> token1 LParen : lex state1
         ')' -> token1 RParen : lex state1
+
+        -- Sigle line comment, starts with '--'
+        '-'
+          | position1 < end
+          , '-' <- w2c (index input position1) -> singleLineComment state2
+
+        -- Block comment, starts with '{-' and ends with '-}'
+        '{'
+          | position1 < end
+          , '-' <- w2c (index input position1) -> commentBlock state2 1
+
+        -- Numbers starts with negative sign
+        '-'
+          | position1 < end
+          , char8' <- (index input position1)
+          , isDigit (w2c char8') ->
+            number position lineColumn state2 True $
+              fromIntegral (char8' - c2w '0')
+
+        -- Number
+        c | isDigit c -> number position lineColumn state1 False $
+            fromIntegral (char8 - c2w '0')
+
+        -- Identifier
+        c | isUpperIdentifierStart c ->
+            identifier position lineColumn state1 True
+
+        c | isIdentifierStart c ->
+            identifier position lineColumn state1 False
+
+        -- operators, are symbol that maybe not
        
         _ -> token1 Error : lex state1
 
 index :: ByteString -> Position.Absolute -> Word8
 index bs (Position.Absolute idx) = unsafeIndex bs idx
+
+singleLineComment :: State -> [Token]
+singleLineComment state@State {..}
+  | position >= end = []
+  | otherwise = let
+      state1 = state { position = Position.add position (Position.Relative 1) }
+    in case w2c (index input position) of
+      '\n' -> lex state { lineColumn = Position.addLine lineColumn }
+      _ -> singleLineComment state1
+
+commentBlock :: State -> Int -> [Token]
+commentBlock state 0 = lex state
+commentBlock state@State {..} depth
+  | position >= end = []
+  | otherwise = let
+      position1 = Position.add position (Position.Relative 1)
+      position2 = Position.add position (Position.Relative 2)
+
+      state1 = state { position = position1
+                     , lineColumn = Position.addColumns lineColumn 1
+                     }
+      state2 = state { position = position2
+                     , lineColumn = Position.addColumns lineColumn 2
+                     }
+    in case w2c (index input position) of
+      '{'
+        | position1 < end
+        , '-' <- w2c (index input position1) ->
+          commentBlock state2 (depth + 1)
+
+      '-'
+        | position1 < end
+        , '}' <- w2c (index input position1) ->
+          commentBlock state2 (depth - 1)
+
+      '\n' -> commentBlock
+                state1 { lineColumn = Position.addLine lineColumn }
+                depth
+
+      _ -> commentBlock state1 depth
+
+number
+  :: Position.Absolute
+  -> Position.LineColumn
+  -> State
+  -> Bool
+  -> Integer
+  -> [Token]
+number startPos startLineColumn state@State {..} shouldNegate acc
+  | position >= end = [token]
+  | otherwise = case w2c c8 of
+      c | isDigit c -> do
+            let acc' = acc * 10 + fromIntegral (c8 - c2w '0')
+            number startPos startLineColumn state1 shouldNegate acc'
+      _ -> token : lex state
+
+  where
+    c8 = index input position
+    token = Token startLineColumn (Span.Absolute startPos position) $
+      Number (if shouldNegate then negate acc else acc)
+
+    state1 = state { position = Position.add position (Position.Relative 1)
+                   , lineColumn = Position.addColumns lineColumn 1
+                   }
+
+isUpperIdentifierStart :: Char -> Bool
+isUpperIdentifierStart c = isUpper c || isLetter c
+{-# INLINEABLE isUpperIdentifierStart #-}
+
+isIdentifierStart :: Char -> Bool
+isIdentifierStart c = isAlpha c || c == '_'
+{-# INLINEABLE isIdentifierStart #-}
+
+isIdentifierRest :: Char -> Bool
+isIdentifierRest c = isIdentifierStart c || isDigit c || c == '\''
+{-# INLINEABLE isIdentifierRest #-}
+
+identifier
+  :: Position.Absolute
+  -> Position.LineColumn
+  -> State
+  -> Bool -- is this starts with uppercase?
+  -> [Token]
+identifier startPos startLineColumn state@State {..} isUpperIdent
+  | position >= end = []
+  | otherwise = case w2c (index input position) of
+      c | isIdentifierRest c ->
+            identifier startPos startLineColumn state1 isUpperIdent
+      _ -> lex state
+  where
+    position1 = Position.add position (Position.Relative 1)
+    position2 = Position.add position (Position.Relative 1)
+
+    state1 = state { position = position1
+                   , lineColumn = Position.addColumns lineColumn 1
+                   }
+    state2 = state { position = position2
+                   , lineColumn = Position.addColumns lineColumn 2
+                   }
+
+identifierToken
+  :: ByteString
+  -> Position.Absolute
+  -> Position.LineColumn
+  -> Position.Absolute
+  -> Token
+identifierToken = undefined
