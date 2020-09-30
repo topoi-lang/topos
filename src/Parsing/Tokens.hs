@@ -2,13 +2,18 @@
 
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Parsing.Tokens where
 
 import Prelude hiding (lex)
 
 import Data.ByteString (ByteString)
+import Data.ByteString.Short (ShortByteString)
+
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Short as SBS
+
 import Data.ByteString.Unsafe (unsafeIndex)
 import Data.ByteString.Internal (w2c, c2w)
 import Data.Word
@@ -34,11 +39,13 @@ data Tok = Error
          | Underscore
          | LParen
          | RParen
+         | LArrow
+         | RArrow
 
          -- | Capturing groups
-         | LowerIdent String
-         | UpperIdent String
-         | Operator   String
+         | LowerIdent ShortByteString
+         | UpperIdent ShortByteString
+         | Operator   ShortByteString
          | Number     Integer -- Haskell's Integer support Float & Double
          deriving Eq
 
@@ -57,6 +64,8 @@ instance Show Tok where
     Underscore -> "_"
     LParen -> "("
     RParen -> ")"
+    LArrow -> "->"
+    RArrow -> "->"
     LowerIdent s -> show s
     UpperIdent s -> show s
     Operator s -> show s
@@ -75,7 +84,7 @@ lexBS :: ByteString -> [Token]
 lexBS bs = lex State { input = bs
                      , end = Position.Absolute (BS.length bs)
                      , position = Position.Absolute 0
-                     , lineColumn = Position.LineColumn 0 0
+                     , lineColumn = Position.LineColumn 1 0
                      }
 
 -- | A bit switch case that will do all the lexing procedure.
@@ -136,8 +145,10 @@ lex state@State {..}
         c | isIdentifierStart c ->
             identifier position lineColumn state1 False
 
-        -- operators, are symbol that maybe not
-       
+        -- Operators, mostly symbols
+        c | isASCIIOperator c ->
+            operator position lineColumn state1
+           
         _ -> token1 Error : lex state1
 
 index :: ByteString -> Position.Absolute -> Word8
@@ -226,11 +237,15 @@ identifier
   -> Bool -- is this starts with uppercase?
   -> [Token]
 identifier startPos startLineColumn state@State {..} isUpperIdent
-  | position >= end = []
+  | position >= end =
+      [identifierToken input startPos startLineColumn position isUpperIdent]
   | otherwise = case w2c (index input position) of
       c | isIdentifierRest c ->
             identifier startPos startLineColumn state1 isUpperIdent
-      _ -> lex state
+      _ ->
+        identifierToken input startPos startLineColumn position isUpperIdent :
+        lex state
+
   where
     position1 = Position.add position (Position.Relative 1)
     position2 = Position.add position (Position.Relative 1)
@@ -242,10 +257,89 @@ identifier startPos startLineColumn state@State {..} isUpperIdent
                    , lineColumn = Position.addColumns lineColumn 2
                    }
 
+-- This can use a DFA state machine to do. But since our token set is so small.
 identifierToken
   :: ByteString
   -> Position.Absolute
   -> Position.LineColumn
   -> Position.Absolute
+  -> Bool -- is this starts with uppercase?
   -> Token
-identifierToken = undefined
+identifierToken input startPos startLineColumn position isUpperIdent =
+  Token startLineColumn (Span.Absolute startPos position) $
+    case w2c (index input startPos) of
+      '_' | pos - base == 1 -> Underscore
+      'l' | "let" <- str -> Let
+      'i' | "in" <- str -> In
+      'w' | "where" <- str -> Where
+      'c' | "case" <- str -> Case
+      'o' | "of" <- str -> Of
+      _ -> let shortBS = SBS.toShort str in
+        if isUpperIdent then UpperIdent shortBS else LowerIdent shortBS
+  where
+    (Position.Absolute base) = startPos
+    (Position.Absolute pos) = position
+    str = BS.drop base $ BS.take (base + pos) input
+
+isASCIIOperator :: Char -> Bool
+isASCIIOperator = \case
+  '!' -> True
+  '#' -> True
+  '$' -> True
+  '%' -> True
+  '&' -> True
+  '*' -> True
+  '+' -> True
+  '-' -> True
+  '/' -> True
+  '?' -> True
+  '>' -> True
+  '<' -> True
+  '@' -> True
+  '^' -> True
+  '|' -> True
+  '~' -> True
+  _  -> False
+{-# INLINABLE isASCIIOperator #-}
+
+operator
+  :: Position.Absolute
+  -> Position.LineColumn
+  -> State
+  -> [Token]
+operator startPos startLineColumn state@State {..}
+  | position >= end =
+      [operatorToken input startPos startLineColumn position]
+  | otherwise = case w2c (index input position) of
+      c | isASCIIOperator c ->
+          operator startPos lineColumn state1
+      _ ->
+          operatorToken input startPos startLineColumn position :
+          lex state
+  where
+    position1 = Position.add position (Position.Relative 1)
+    state1 = state { position = position1
+                   , lineColumn = Position.addColumns lineColumn 1
+                   }
+
+operatorToken
+  :: ByteString
+  -> Position.Absolute
+  -> Position.LineColumn
+  -> Position.Absolute
+  -> Token
+operatorToken input startPos startLineColumn position =
+  Token startLineColumn (Span.Absolute startPos position) $
+    case w2c (index input startPos) of
+      '=' | len == 1 -> Equal
+      ';' | len == 1 -> SemiColon
+      ':' | len == 1 -> Colon
+      '.' | len == 1 -> Dot
+      '-' | "->" <- str -> RArrow
+      '<' | "<-" <- str -> LArrow
+      _ -> let shortBS = SBS.toShort str in Operator shortBS
+  where
+    (Position.Absolute base) = startPos
+    (Position.Absolute pos) = position
+    len = pos - base
+    str = BS.drop base $ BS.take (base + pos) input
