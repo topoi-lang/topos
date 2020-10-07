@@ -19,8 +19,6 @@ import Data.ByteString.Internal (w2c, c2w)
 import Data.Word
 import Data.Char
 
-import Debug.Trace
-
 import qualified Parsing.Position as Position
 import qualified Parsing.Span as Span
  

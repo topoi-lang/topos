@@ -16,6 +16,7 @@ dependencies:
 - containers
 - mtl
 - optparse-applicative
+- unordered-containers
 - utf8-string
 
 library:
