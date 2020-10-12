@@ -4,7 +4,7 @@ module Name where
 
 import Data.ByteString.Short (ShortByteString)
 
-newtype Pre = Pre ShortByteString
+newtype Surface = Surface ShortByteString
   deriving (Eq, Ord, Show)
 
 newtype Name = Name ShortByteString

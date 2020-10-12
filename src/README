@@ -1,0 +1,12 @@
+==============================================================================
+Documentation for the topos compiler
+
+
+Inside the /src, you can see there are lots of directories, it has its own
+meaning. And it groups codes with similar function into one. For example,
+
+The source code of the Topos tokeniser is located entirely under `Tokenising`
+directory. And parsing rules is located under `Parsing`.
+
+Some of the data that will be used in entire compilation lifetime is located
+under this path, which is src/.

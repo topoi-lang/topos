@@ -5,11 +5,6 @@ license: BSD3
 extra-source-files:
 - readme
 
-default-extensions:
-- OverloadedStrings
-- BlockArguments
-- LambdaCase
-
 dependencies:
 - base
 - bytestring >= 0.10.12.0
