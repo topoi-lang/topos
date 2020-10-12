@@ -3,7 +3,7 @@
 module Error.Parsing where
 
 import Data.ByteString (ByteString)
-import qualified Parsing.Position as Position
+import qualified Tokenising.Position as Position
 
 data Parsing = Parsing { reason :: Maybe ByteString
                        , expected :: [ByteString]

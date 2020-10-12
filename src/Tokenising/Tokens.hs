@@ -4,7 +4,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parsing.Tokens where
+module Tokenising.Tokens where
 
 import Prelude hiding (lex)
 
@@ -19,8 +19,8 @@ import Data.ByteString.Internal (w2c, c2w)
 import Data.Word
 import Data.Char
 
-import qualified Parsing.Position as Position
-import qualified Parsing.Span as Span
+import qualified Tokenising.Position as Position
+import qualified Tokenising.Span as Span
  
 data Token = Token !Position.LineColumn !Span.Absolute !Tok
   deriving Show

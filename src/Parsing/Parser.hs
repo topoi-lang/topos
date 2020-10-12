@@ -19,9 +19,9 @@ import Data.HashSet (HashSet)
 import qualified Data.HashSet as HashSet
 import Data.ByteString (ByteString)
 
-import Parsing.Tokens
-import qualified Parsing.Position as Position
-import qualified Parsing.Span as Span
+import Tokenising.Tokens
+import qualified Tokenising.Position as Position
+import qualified Tokenising.Span as Span
 import qualified Error.Parsing as Error
 
 parseTokens :: Parser a -> [Token] -> Either Error.Parsing a

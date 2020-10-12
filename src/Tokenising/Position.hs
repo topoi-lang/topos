@@ -1,5 +1,5 @@
 -- | Position information allocated during parsing stage
-module Parsing.Position where
+module Tokenising.Position where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
