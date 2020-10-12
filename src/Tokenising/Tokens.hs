@@ -19,8 +19,8 @@ import Data.ByteString.Internal (w2c, c2w)
 import Data.Word
 import Data.Char
 
-import qualified Tokenising.Position as Position
-import qualified Tokenising.Span as Span
+import qualified Position
+import qualified Span
  
 data Token = Token !Position.LineColumn !Span.Absolute !Tok
   deriving Show

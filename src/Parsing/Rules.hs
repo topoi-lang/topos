@@ -1,5 +1,3 @@
--- | Parse the topoi source code using this
-
 {-# LANGUAGE OverloadedStrings #-}
 
 module Parsing.Rules where
@@ -8,7 +6,7 @@ import Parsing.Parser (Parser)
 import qualified Parsing.Parser as Parser
 import qualified Tokenising.Tokens as Lexer
 
-import qualified Tokenising.Span as Span
+import qualified Span
 import qualified Name
 import qualified Module
 

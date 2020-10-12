@@ -1,0 +1,13 @@
+-- I will try to explain why Topoi's syntax look as they go.
+
+-- TODO: module system
+-- becuase module system is constructed on different semantic, and that
+-- belongs to the engineering.
+
+-- Top-level funcitons and values is just
+-- instead of describing the types with special syntax, we separate it into two
+x : Int
+x = 3
+
+-- or
+x : Int = 3

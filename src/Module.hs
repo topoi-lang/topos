@@ -2,7 +2,7 @@ module Module where
 
 import Data.HashSet (HashSet)
 import qualified Name
-import qualified Tokenising.Span as Span
+import qualified Span
 
 data Header = Header { _exposedNames :: !ExposedNames
                      , _imports :: [Import]

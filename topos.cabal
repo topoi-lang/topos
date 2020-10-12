@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 523566f16526f8ebc7a0e050de8d005a2346edd948b7f655767dda91d09fbdc9
+-- hash: 398bc58fc037fd4dbe580756b5609b9a88ccc6c3e89cc176d84a53b09ee871d2
 
 name:           topos
 version:        0.1.0.0
@@ -20,8 +20,9 @@ library
       Name
       Parsing.Parser
       Parsing.Rules
-      Tokenising.Position
-      Tokenising.Span
+      Position
+      Span
+      Term
       Tokenising.Tokens
   other-modules:
       Paths_topos
