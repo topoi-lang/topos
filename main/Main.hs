@@ -2,7 +2,7 @@
 
 module Main where
 
-import Parsing.Rules
+import Parser
 
 main :: IO ()
-main = putStr someFunc
+main = main'
