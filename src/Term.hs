@@ -20,6 +20,7 @@ data PrimOp = Add | Sub deriving (Show)
 data Lit
   = LInt Int
   | LBool Bool
+  | LString String
   deriving (Show)
 
 data Value
@@ -32,5 +33,4 @@ data Type
   = TInt
   | TBool
   | TClosure Type Type -- A closure
-  | THole -- [TODO] A hole, placeholder here
   deriving (Show, Eq)

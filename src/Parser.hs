@@ -28,8 +28,23 @@ strToName = Name . toName . BSU.fromString
 binding :: Parser Name
 binding = identifier <|> parsecMap strToName (string "_")
 
+numberP :: Parser Int
+numberP = parsecMap read $ many1 digit <* spaces
+
+stringP :: Parser String
+stringP = char '\"' *> many alphaNum <* char '\"' <* spaces
+
+atomicLit :: Parser Lit
+atomicLit = tries [ LInt <$> numberP
+                  , LBool True <$ string "true"
+                  , LBool False <$ string "false"
+                  , LString <$> stringP
+                  ]
+
 atomicTerm :: Parser Term
-atomicTerm = (Var <$> identifier) <|> parens atomicTerm
+atomicTerm = (Var <$> identifier)
+         <|> (Lit <$> atomicLit)
+         <|> parens atomicTerm
 
 typeParse :: Parser Type
 typeParse = tries
@@ -44,8 +59,7 @@ lambda :: Parser Term
 lambda = do
   char '\\'
   bindingsWType <- many1 bindingWithTypeAnnotation
-  char '.'
-  spaces
+  char '.' <* spaces
   term <- atomicTerm
   pure $ foldr (\(name, ty) term -> Lam name ty term) term bindingsWType
 
@@ -55,7 +69,7 @@ termParser = spaces *> lambda <* eof
 
 -- And an example input for it:
 example :: String
-example = unlines [ "\\(i:Int) (b:Bool) . i"]
+example = unlines [ "\\(i:Int) (b:Bool) . \"123\""]
 
 main' :: IO ()
 main' = do
