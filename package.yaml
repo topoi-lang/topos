@@ -9,6 +9,7 @@ dependencies:
 - base
 - bytestring >= 0.10.12.0
 - containers
+- hashable
 - mtl
 - optparse-applicative
 - parsec

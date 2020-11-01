@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f0dfffde9bf574e1a6e06114a99002005ef916d76a408e5e6caf9e7a6b514db1
+-- hash: 003ff5be974e58a2a6c3d708664301889bf401e5708ff5a31348808d8bba16a3
 
 name:           topos
 version:        0.1.0.0
@@ -19,6 +19,7 @@ library
       Parser
       PrettyParseError
       Term
+      Value
   other-modules:
       Paths_topos
   hs-source-dirs:
@@ -28,6 +29,7 @@ library
       base
     , bytestring >=0.10.12.0
     , containers
+    , hashable
     , mtl
     , optparse-applicative
     , parsec
@@ -46,6 +48,7 @@ executable topos
       base
     , bytestring >=0.10.12.0
     , containers
+    , hashable
     , mtl
     , optparse-applicative
     , parsec
