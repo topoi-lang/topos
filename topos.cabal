@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 003ff5be974e58a2a6c3d708664301889bf401e5708ff5a31348808d8bba16a3
+-- hash: 187d990435286b029e833ee441329382ebb57c5181f560eb57fb51e9f0014987
 
 name:           topos
 version:        0.1.0.0
@@ -19,6 +19,7 @@ library
       Parser
       PrettyParseError
       Term
+      Type
       Value
   other-modules:
       Paths_topos

@@ -21,6 +21,7 @@ data Lit
 data Type
   = TInt
   | TBool
+  | TString
   | TClosure Type Type -- A closure
   deriving (Show, Eq)
 

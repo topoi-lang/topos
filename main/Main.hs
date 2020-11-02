@@ -5,5 +5,7 @@ module Main where
 import Parser
 import Value
 
+import Type
+
 main :: IO ()
-main = mainEval
+main = typeCheckMain
