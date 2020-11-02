@@ -5,8 +5,6 @@ import Text.Parsec.String (Parser)
 import PrettyParseError
 import Text.Parsec
 
-import qualified Data.ByteString.UTF8 as BSU
-
 import Term
 import Name
 
@@ -21,9 +19,6 @@ braced p = string "{" *> spaces *> p <* string "}" <* spaces
 
 identifier :: Parser Name
 identifier = parsecMap strToName $ many1 letter <* spaces
-
-strToName :: String -> Name
-strToName = Name . toName . BSU.fromString
 
 binding :: Parser Name
 binding = identifier <|> parsecMap strToName (string "_")
@@ -79,5 +74,4 @@ main' = do
       putStrLn $ "\n\ESC[7m " <> filename <> " \ESC[0m\n"
       putStrLn (prettyParseError prettyParseErrorDefaults e example)
 
-    Right tree -> do
-      print tree
+    Right tree -> print tree

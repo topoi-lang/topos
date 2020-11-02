@@ -27,8 +27,21 @@ eval _ (Lit (LString str)) = VString str
 eval s (Var name)          = fromJust (HMap.lookup name s)
 eval s (Lam arg _ body)    = VClosure arg body s
 eval s (App term1 term2)   = apply (eval s term1) (eval s term2)
--- [TODO] Binops ?
+eval s (BinOps op x y)     = binOps op (eval s x) (eval s y)
 
 apply :: Value -> Value -> Value
 apply (VClosure name term scope) val = eval (HMap.insert name val scope) term
 apply _ _ = error "Tried to apply non-closure"
+
+binOps :: PrimOp -> Value -> Value -> Value
+binOps Add (VInt x) (VInt y) = VInt (x + y)
+binOps Sub (VInt x) (VInt y) = VInt (x - y)
+binOps Mul (VInt x) (VInt y) = VInt (x * y)
+binOps Div (VInt x) (VInt y) = VInt (x `quot` y)
+binOps _   _        _        = error "Not a number"
+
+mainEval :: IO ()
+mainEval = do
+  let x = strToName "x"
+  let term = App (Lam x TInt (BinOps Add (Var x) (Lit $ LInt 1))) (Lit $ LString "2")
+  print $ eval initScope term

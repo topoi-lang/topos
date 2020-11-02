@@ -12,8 +12,6 @@ data Term
   | BinOps PrimOp Term Term
   deriving (Show)
 
-data PrimOp = Add | Sub deriving (Show)
-
 data Lit
   = LInt Int
   | LBool Bool
@@ -25,3 +23,6 @@ data Type
   | TBool
   | TClosure Type Type -- A closure
   deriving (Show, Eq)
+
+data PrimOp = Add | Sub | Mul | Div
+  deriving (Show)

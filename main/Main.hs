@@ -3,6 +3,7 @@
 module Main where
 
 import Parser
+import Value
 
 main :: IO ()
-main = main'
+main = mainEval
