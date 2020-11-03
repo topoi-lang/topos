@@ -1,6 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
+
 module Parser where
 
+-- import Text.Parsec.ByteString (Parser)
 import Text.Parsec.String (Parser)
 import PrettyParseError
 import Text.Parsec
@@ -62,16 +64,10 @@ lambda = do
 termParser :: Parser Term
 termParser = spaces *> lambda <* eof
 
--- And an example input for it:
-example :: String
-example = unlines [ "\\(i:Int) (b:Bool) . \"123\""]
-
-main' :: IO ()
-main' = do
-  let filename = "example.topoi"
-  case parse termParser filename example of
-    Left e -> do
-      putStrLn $ "\n\ESC[7m " <> filename <> " \ESC[0m\n"
-      putStrLn (prettyParseError prettyParseErrorDefaults e example)
-
-    Right tree -> print tree
+parseSrc :: String -> String -> Either String Term
+parseSrc filename src = case parse termParser filename src of
+  Left e -> Left $
+    unlines [ "\n\ESC[7m " <> filename <> " \ESC[0m\n"
+            , prettyParseError prettyParseErrorDefaults e src
+            ]
+  Right tree -> Right tree
