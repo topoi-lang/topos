@@ -57,9 +57,3 @@ typeCheck env (BinOps _ x y) = do
     (TInt, y')   -> Left $ TypeMismatch TInt y'
     (x', TInt)   -> Left $ TypeMismatch TInt x'
     (x', y')     -> Left $ TypeMismatch x' y'
-
-typeCheckMain :: IO ()
-typeCheckMain = do
-  let x = strToName "x"
-  let term = App (Lam x TInt (BinOps Add (Var x) (Lit $ LInt 1))) (Lit $ LInt 2)
-  print $ typeCheck initEnv term

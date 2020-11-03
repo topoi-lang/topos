@@ -39,9 +39,3 @@ binOps Sub (VInt x) (VInt y) = VInt (x - y)
 binOps Mul (VInt x) (VInt y) = VInt (x * y)
 binOps Div (VInt x) (VInt y) = VInt (x `quot` y)
 binOps _   _        _        = error "Not a number"
-
-mainEval :: IO ()
-mainEval = do
-  let x = strToName "x"
-  let term = App (Lam x TInt (BinOps Add (Var x) (Lit $ LInt 1))) (Lit $ LString "2")
-  print $ eval initScope term
