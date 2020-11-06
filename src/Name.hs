@@ -11,7 +11,7 @@ newtype Name = Name ShortByteString
 newtype Module = Module ShortByteString
   deriving (Eq, Ord, Show)
 
--- toName = toShort
+toName = Name . toShort
 
 strToName :: String -> Name
 strToName = Name . toShort . BSU.fromString

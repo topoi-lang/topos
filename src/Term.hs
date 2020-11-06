@@ -2,6 +2,8 @@ module Term where
 
 import Name
 
+import Data.ByteString (ByteString)
+
 -- The STLC is based on the (untyped) lambda calculus.
 -- And the syntax of the STLC consists of two things: terms and types
 data Term
@@ -15,7 +17,7 @@ data Term
 data Lit
   = LInt Int
   | LBool Bool
-  | LString String
+  | LString ByteString
   deriving (Show)
 
 data Type

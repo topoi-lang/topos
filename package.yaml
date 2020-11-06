@@ -10,9 +10,8 @@ dependencies:
 - bytestring >= 0.10.12.0
 - containers
 - hashable
-- mtl
+- megaparsec
 - optparse-applicative
-- parsec
 - unordered-containers
 - utf8-string
 

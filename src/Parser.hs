@@ -1,73 +1,86 @@
-{-# LANGUAGE FlexibleContexts #-}
-
+{-# LANGUAGE OverloadedStrings #-}
 module Parser where
 
--- import Text.Parsec.ByteString (Parser)
-import Text.Parsec.String (Parser)
-import PrettyParseError
-import Text.Parsec
+import Text.Megaparsec
+import qualified Text.Megaparsec.Byte as B
+import qualified Text.Megaparsec.Byte.Lexer as L
+
+import Data.Char (isAlphaNum, chr)
+import Data.ByteString.Internal (ByteString, c2w)
+import Data.ByteString (pack)
+import GHC.Word (Word8)
+import Data.Void (Void)
 
 import Term
-import Name
+import Name (Name, toName)
 
-tries :: [Parser a] -> Parser a
-tries = choice . map try
+type Parser = Parsec Void ByteString
 
-parens :: Parser a -> Parser a
-parens p = char '(' *> spaces *> p <* char ')' <* spaces
+ws :: Parser ()
+ws = L.space B.space1 (L.skipLineComment "--") (L.skipBlockComment "{-" "}-")
 
-braced :: Parser a -> Parser a
-braced p = string "{" *> spaces *> p <* string "}" <* spaces
+lexeme = L.lexeme ws -- so I no need to append `<* spaces` everywhere
+symbol s = lexeme (B.string s)
+char c = lexeme (B.char . c2w $ c)
+parens p = char '(' *> p <* char ')'
+braced p = char '{' *> p <* char '}'
 
-identifier :: Parser Name
-identifier = parsecMap strToName $ many1 letter <* spaces
+-- | Convert a byte to char.
+toChar :: Word8 -> Char
+toChar = chr . fromIntegral
+{-# INLINE toChar #-}
 
-binding :: Parser Name
-binding = identifier <|> parsecMap strToName (string "_")
+keyword :: ByteString -> Bool
+keyword x = x == "let" || x == "in"
 
-numberP :: Parser Int
-numberP = parsecMap read $ many1 digit <* spaces
+pIdentifier :: Parser Name
+pIdentifier = do
+  x <- takeWhile1P Nothing (isAlphaNum . toChar)
+  toName x <$ ws
 
-stringP :: Parser String
-stringP = char '\"' *> many alphaNum <* char '\"' <* spaces
+pBind :: Parser Name
+pBind = pIdentifier <|> (toName <$> symbol "_")
 
-atomicLit :: Parser Lit
-atomicLit = tries [ LInt <$> numberP
-                  , LBool True <$ string "true"
-                  , LBool False <$ string "false"
-                  , LString <$> stringP
-                  ]
+pString :: Parser ByteString
+pString = pack <$> (char '\"' *> manyTill anySingle (char '\"'))
+
+pNumber :: Parser Int
+pNumber = lexeme L.decimal
+
+pAtomicLit :: Parser Lit
+pAtomicLit = choice [ LInt <$> pNumber
+                   , LBool True <$ symbol "true"
+                   , LBool False <$ symbol "false"
+                   , LString <$> pString
+                   ]
 
 atomicTerm :: Parser Term
-atomicTerm = (Var <$> identifier)
-         <|> (Lit <$> atomicLit)
+atomicTerm = (Var <$> pIdentifier)
+         <|> (Lit <$> pAtomicLit)
          <|> parens atomicTerm
 
 typeParse :: Parser Type
-typeParse = tries
-  [ TInt <$ string "Int"
-  , TBool <$ string "Bool"
+typeParse = choice
+  [ TInt <$ symbol "Int"
+  , TBool <$ symbol "Bool"
   ]
 
 bindingWithTypeAnnotation :: Parser (Name, Type)
-bindingWithTypeAnnotation = parens ((,) <$> binding <*> (char ':' *> typeParse))
+bindingWithTypeAnnotation = parens ((,) <$> pBind <*> (char ':' *> typeParse))
 
-lambda :: Parser Term
-lambda = do
+pLambda :: Parser Term
+pLambda = do
   char '\\'
-  bindingsWType <- many1 bindingWithTypeAnnotation
-  char '.' <* spaces
+  bindingsWType <- some bindingWithTypeAnnotation
+  char '.'
   term <- atomicTerm
   pure $ foldr (\(name, ty) term -> Lam name ty term) term bindingsWType
 
 -- entrypoint
 termParser :: Parser Term
-termParser = spaces *> lambda <* eof
+termParser = ws *> pLambda <* eof
 
-parseSrc :: String -> String -> Either String Term
+parseSrc :: String -> ByteString -> Either String Term
 parseSrc filename src = case parse termParser filename src of
-  Left e -> Left $
-    unlines [ "\n\ESC[7m " <> filename <> " \ESC[0m\n"
-            , prettyParseError prettyParseErrorDefaults e src
-            ]
-  Right tree -> Right tree
+  Left e -> Left $ errorBundlePretty e
+  Right t -> Right t

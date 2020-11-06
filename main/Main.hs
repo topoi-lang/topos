@@ -10,6 +10,8 @@ import System.Exit (exitFailure, exitSuccess)
 import Paths_topos (version)
 import qualified Data.Version as Version
 
+import qualified Data.ByteString as BS
+
 import qualified Parser
 import Value
 import Type
@@ -41,7 +43,7 @@ main = do
   when (showVersion flags) (printVersion >> exitSuccess)
 
   inputFilepath <- maybe inputFileNotFound pure (compilerInputFile flags)
-  inputContent <- readFile inputFilepath
+  inputContent <- BS.readFile inputFilepath
 
   case Parser.parseSrc inputFilepath inputContent of
     Left errorMsg -> error errorMsg

@@ -2,7 +2,6 @@
 -- | Now it only return Right (returnTy) if it is successfully type-checked.
 module Type where
 
-import Data.Function (on)
 import Data.Maybe (fromMaybe)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HMap

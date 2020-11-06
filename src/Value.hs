@@ -3,6 +3,7 @@ module Value where
 import Name
 import Term
 
+import Data.ByteString (ByteString)
 import Data.Maybe (fromJust)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HMap
@@ -16,7 +17,7 @@ data Value
   = VInt Int
   | VBool Bool
   | VClosure Name Term Scope
-  | VString String
+  | VString ByteString
   -- ^ this is why we need the Value datatype. To encode the closure value.
   deriving (Show)
 
