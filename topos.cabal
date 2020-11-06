@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4661794a8e7edfba5ace038a02c1ae7dc2a46b664bd4549512c55f4623a841bd
+-- hash: e71d0a93de76a6e82aba6eccee69e7c6b473ea8da6fb8d683c79cb138d347461
 
 name:           topos
 version:        0.1.0.0
@@ -15,25 +15,22 @@ extra-source-files:
 
 library
   exposed-modules:
-      Error.Parsing
-      Module
       Name
-      Parse
-      Parsing.Parser
-      Parsing.Position
-      Parsing.Span
-      Parsing.Tokens
+      Parser
+      Term
+      Type
+      Value
   other-modules:
       Paths_topos
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings BlockArguments LambdaCase
   ghc-options: -Wall
   build-depends:
       base
     , bytestring >=0.10.12.0
     , containers
-    , mtl
+    , hashable
+    , megaparsec
     , optparse-applicative
     , unordered-containers
     , utf8-string
@@ -45,13 +42,13 @@ executable topos
       Paths_topos
   hs-source-dirs:
       main
-  default-extensions: OverloadedStrings BlockArguments LambdaCase
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       base
     , bytestring >=0.10.12.0
     , containers
-    , mtl
+    , hashable
+    , megaparsec
     , optparse-applicative
     , topos
     , unordered-containers

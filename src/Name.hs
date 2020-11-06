@@ -1,14 +1,17 @@
--- | This needs to be documented seriously
-
+{-# LANGUAGE GeneralisedNewtypeDeriving #-}
 module Name where
 
-import Data.ByteString.Short (ShortByteString)
-
-newtype Pre = Pre ShortByteString
-  deriving (Eq, Ord, Show)
+import Data.Hashable (Hashable)
+import Data.ByteString.Short (ShortByteString, toShort)
+import qualified Data.ByteString.UTF8 as BSU
 
 newtype Name = Name ShortByteString
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Hashable)
 
 newtype Module = Module ShortByteString
   deriving (Eq, Ord, Show)
+
+toName = Name . toShort
+
+strToName :: String -> Name
+strToName = Name . toShort . BSU.fromString
