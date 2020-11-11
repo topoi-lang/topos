@@ -6,6 +6,9 @@ import Data.Maybe (fromMaybe)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HMap
 
+import Data.HashSet (HashSet)
+import qualified Data.HashSet as HSet
+
 import Name
 import Term
 
@@ -56,3 +59,32 @@ typeCheck env (BinOps _ x y) = do
     (TInt, y')   -> Left $ TypeMismatch TInt y'
     (x', TInt)   -> Left $ TypeMismatch TInt x'
     (x', y')     -> Left $ TypeMismatch x' y'
+
+---------------------------
+-- substitutions
+---------------------------
+data Scheme = Scheme [Name] Type
+
+type Subst = HashMap Name Type
+
+class Types a where
+  -- free type variables
+  ftv :: a -> HashSet Name
+  -- apply substitution
+  apply_subst :: Subst -> a -> a
+
+
+instance Types Type where
+  ftv (TVar name) = HSet.singleton name
+  ftv (TInt) = HSet.empty
+  ftv (TBool) = HSet.empty
+  ftv (TClosure t1 t2) = HSet.union (ftv t1) (ftv t2)
+
+  apply_subst s (TVar name) = fromMaybe (TVar name) (HMap.lookup name s)
+  apply_subst s (TClosure arg ret) = TClosure (apply_subst s arg) (apply_subst s ret)
+  apply_subst _ t = t
+
+
+instance Types Scheme where
+  ftv (Scheme tvars t) = HSet.difference (ftv t) (HSet.fromList tvars)
+  apply_subst s (Scheme tvars t) = Scheme tvars $ apply_subst (foldr HMap.delete s tvars) t

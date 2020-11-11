@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e71d0a93de76a6e82aba6eccee69e7c6b473ea8da6fb8d683c79cb138d347461
+-- hash: c61f2c77c011db95ebb771dd25943ee0be7e9c4e265fb7e8c45557e75e829614
 
 name:           topos
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
       base
     , bytestring >=0.10.12.0
     , containers
+    , fused-effects
     , hashable
     , megaparsec
     , optparse-applicative
@@ -47,6 +48,7 @@ executable topos
       base
     , bytestring >=0.10.12.0
     , containers
+    , fused-effects
     , hashable
     , megaparsec
     , optparse-applicative

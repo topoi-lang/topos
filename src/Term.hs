@@ -22,6 +22,7 @@ data Lit
 
 data Type
   = TInt
+  | TVar Name
   | TBool
   | TString
   | TClosure Type Type -- A closure
