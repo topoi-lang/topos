@@ -1,1 +1,36 @@
-\(x:Int). "x + 1"
+
+
+\a . a1
+ 
+(\a. a b) == (\v. v b)  # alpha equivalence
+
+-- (\b1 . b1 b) # edge case
+
+(\a. a b) x
+
+
+free variable 
+(\a . a b)
+
+freeVars :: Exp -> [Name]
+freeVars (Var x) = [x]
+freeVars (App a b) = freeVars a `union` freeVars b 
+freeVars (Lam n x) = freeVars x \\ [n]
+
+allVars :: Exp -> [Name]
+allVars (Var x) = [x]
+allVars (App a b) = allVars a `union` allVars b
+allVars (Lam n x) = allVars x
+
+=> x b
+
+\a . \b . [a b] \c [a b c] . a + b + c
+
+type Env = Map Name Term
+
+eval (App f a) env = do
+  f' <- eval f env
+  a' <- eval a env
+
+  apply f' a'
+

@@ -7,12 +7,14 @@ extra-source-files:
 
 dependencies:
 - base
-- bytestring >= 0.10.12.0
+- bytestring
 - containers
 - fused-effects
 - hashable
 - megaparsec
+- mtl
 - optparse-applicative
+- unbound
 - unordered-containers
 - utf8-string
 

@@ -1,7 +1,9 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Term where
 
 import Name
 
+import Data.Hashable (Hashable)
 import Data.ByteString (ByteString)
 
 -- The STLC is based on the (untyped) lambda calculus.
@@ -20,13 +22,19 @@ data Lit
   | LString ByteString
   deriving (Show)
 
+newtype TVar = TV Name
+  deriving (Show, Eq, Ord, Hashable)
+
 data Type
-  = TInt
-  | TVar Name
-  | TBool
-  | TString
+  = TVar TVar
+  | TConstructor String
   | TClosure Type Type -- A closure
   deriving (Show, Eq)
+
+tInt, tBool, tString :: Type
+tInt = TConstructor "Int"
+tBool = TConstructor "Bool"
+tString = TConstructor "String"
 
 data PrimOp = Add | Sub | Mul | Div
   deriving (Show)

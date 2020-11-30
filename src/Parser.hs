@@ -31,7 +31,7 @@ toChar = chr . fromIntegral
 {-# INLINE toChar #-}
 
 keyword :: ByteString -> Bool
-keyword x = x == "let" || x == "in"
+keyword x = x == "let" || x == "in" || x == "forall"
 
 pIdentifier :: Parser Name
 pIdentifier = do
@@ -61,8 +61,8 @@ atomicTerm = (Var <$> pIdentifier)
 
 typeParse :: Parser Type
 typeParse = choice
-  [ TInt <$ symbol "Int"
-  , TBool <$ symbol "Bool"
+  [ tInt <$ symbol "Int"
+  , tBool <$ symbol "Bool"
   ]
 
 bindingWithTypeAnnotation :: Parser (Name, Type)
