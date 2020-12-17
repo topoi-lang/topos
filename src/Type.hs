@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 -- | Should refine the TypeCheckingMonad's result for better error recovery.
 -- | Now it only return Right (returnTy) if it is successfully type-checked.
 module Type where
@@ -11,6 +12,8 @@ import qualified Data.HashSet as HSet
 
 import Control.Monad.State
 import Control.Monad.Except
+import Control.Monad.Reader
+import Control.Monad.Identity
 
 import Name
 import Term
@@ -21,6 +24,7 @@ data TypeCheckError
   | NotInScope Name
   | UnificationFail Type Type
   | InfiniteType TVar Type
+  | UnboundVariable Name
   deriving (Show)
 
 type Env = HashMap Name Type
@@ -153,12 +157,43 @@ bind a t | t == TVar a = return nullSubst
          | occursCheck a t = throwError $ InfiniteType a t
          | otherwise = return $ HMap.singleton a t
 
--- Generalization: Converting a τ type into a σ type by crosing over
--- all free type variabels in a type scheme.
-
 -- Instantiation: Converting a σ type into a τ type by creating fresh
 -- names for each type variable taht does not appear in the current
 -- type environment
+instantiate ::  Scheme -> InferM Type
+instantiate (Forall as t) = do
+  as' <- mapM (const freshName) as
+  let s = HMap.fromList $ zip as as'
+  return $ apply s t
+
+-- Generalization: Converting a τ type into a σ type by crosing over
+-- all free type variabels in a type scheme.
+generalize :: TypeEnv -> Type -> Scheme
+generalize env t  = Forall as t
+    where as = HSet.toList $ ftv t `HSet.difference` ftv env
+
+lookupEnv :: Name -> TypeEnv -> InferM (Substitution, Type)
+lookupEnv name (TypeEnv env) = case HMap.lookup name env of
+  Nothing -> throwError $ UnboundVariable name
+  Just s  -> do t <- instantiate s
+                return (nullSubst, t)
+
+infer :: TypeEnv -> Term -> InferM (Substitution, Type)
+infer env expr = case expr of
+  Var name -> lookupEnv name env
+
+  Lam name userType expr -> do
+    tv <- freshName
+    let env' = env `tyEnvExtend` (name, Forall [] tv)
+    (s1, t1) <- infer env' expr
+    return (s1, apply s1 tv)
+
+  _ -> return (nullSubst, tInt)
+  -- Lam x e -> do
+  --   tv <- freshName
+  --   t <- 
+
+
 
 
 -- closeOver :: (Map.Map TVar Type, Type) -> Scheme
