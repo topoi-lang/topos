@@ -103,17 +103,26 @@ unwrapSingleTuple xs = case length xs of
   _ -> Right xs
 
 pTy :: Parser Ty
-pTy = pPrimTy `chainl1` arrow
+pTy = pPrimTy `chainr1` arrow
   where
     -- should write a tokenizer so I don't need to deal with spaces anymore
     arrow = ws *> symbol "->" $> TyFunction
 
 chainl1 :: Parser a -> Parser (a -> a -> a) -> Parser a
-p `chainl1` op = do { a <- p; rest a }
+p `chainl1` op = p >>= rest
   where
     rest a = (do f <- op
                  b <- p
                  rest (f a b))
+             <|> return a
+
+chainr1 :: Parser a -> Parser (a -> a -> a) -> Parser a
+p `chainr1` op = scan
+  where
+    scan = p >>= rest
+    rest a = do f <- op
+                b <- scan
+                return (f a b)
              <|> return a
 
 pTypeBind :: Parser Declaration
@@ -157,6 +166,7 @@ data Expr
   = ExprAtom Atom
   | ExprApp Expr Expr
   | ExprLet { _pat :: Identifier, _expr :: Expr, _body :: Expr } -- no type annotation ?
+  | ExprVar ByteString
   -- lambdas where ?
   -- if then else ?
   deriving (Show)
@@ -172,10 +182,7 @@ pLet = do
   pure $ ExprLet x t u
 
 pApp :: Parser Expr
-pApp = do
-  fn <- pExpr
-  args <- some pExpr
-  pure (foldr ExprApp fn args)
+pApp = (ExprVar <$> do takeWhile1P Nothing (isAlphaNum . toChar)) `chainl1` (char ' ' $> ExprApp)
 
 pExpr :: Parser Expr
 pExpr = choice
