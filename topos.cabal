@@ -4,37 +4,34 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4cdbe801be942ec3b14e255f4134dd24e6911bb4b07bb5f7d1c73f496feeda5b
+-- hash: 7864267a90e7e3322aa3708e4abe70527698998fd188aab734e6637eda2b8115
 
 name:           topos
 version:        0.1.0.0
 license:        BSD3
 build-type:     Simple
 extra-source-files:
-    readme
+    README.md
 
 library
   exposed-modules:
-      Name
       Parser
-      Term
-      Type
-      Value
+      Syntax
   other-modules:
       Paths_topos
   hs-source-dirs:
       src
+  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeFamilies TypeSynonymInstances ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
     , bytestring
     , containers
-    , fused-effects
     , hashable
     , megaparsec
     , mtl
     , optparse-applicative
-    , unbound
+    , protolude
     , unordered-containers
     , utf8-string
   default-language: Haskell2010
@@ -44,19 +41,19 @@ executable topos
   other-modules:
       Paths_topos
   hs-source-dirs:
-      main
+      app
+  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeFamilies TypeSynonymInstances ViewPatterns
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       base
     , bytestring
     , containers
-    , fused-effects
     , hashable
     , megaparsec
     , mtl
     , optparse-applicative
+    , protolude
     , topos
-    , unbound
     , unordered-containers
     , utf8-string
   default-language: Haskell2010

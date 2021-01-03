@@ -3,18 +3,58 @@ version: 0.1.0.0
 license: BSD3
 
 extra-source-files:
-- readme
+- README.md
+
+default-extensions:
+- BangPatterns
+- BinaryLiterals
+- ConstraintKinds
+- DataKinds
+- DefaultSignatures
+- DeriveAnyClass
+- DeriveDataTypeable
+- DeriveFoldable
+- DeriveFunctor
+- DeriveGeneric
+- DerivingStrategies
+- DeriveTraversable
+- DoAndIfThenElse
+- EmptyDataDecls
+- ExistentialQuantification
+- FlexibleContexts
+- FlexibleInstances
+- FunctionalDependencies
+- GADTs
+- GeneralizedNewtypeDeriving
+- InstanceSigs
+- KindSignatures
+- LambdaCase
+- MultiParamTypeClasses
+- MultiWayIf
+- NamedFieldPuns
+- NoImplicitPrelude
+- OverloadedStrings
+- PartialTypeSignatures
+- PatternGuards
+- PolyKinds
+- RankNTypes
+- RecordWildCards
+- ScopedTypeVariables
+- StandaloneDeriving
+- TupleSections
+- TypeFamilies
+- TypeSynonymInstances
+- ViewPatterns
 
 dependencies:
 - base
 - bytestring
 - containers
-- fused-effects
 - hashable
 - megaparsec
 - mtl
 - optparse-applicative
-- unbound
+- protolude
 - unordered-containers
 - utf8-string
 
@@ -25,7 +65,7 @@ library:
 executables:
   topos:
     main: Main.hs
-    source-dirs: main
+    source-dirs: app
     ghc-options:
     - -threaded
     - -rtsopts

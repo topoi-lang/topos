@@ -2,11 +2,3 @@ resolver: lts-16.15
 
 packages:
 - .
-
-extra-deps:
-- unordered-containers-0.2.13.0@sha256:6310c636f92ed4908fdd0de582b6be31c2851c7b5f2ec14e9f416eb94df7a078,4978
-- git: https://github.com/sweirich/replib.git
-  commit: 096a59e73336130333c159ba00299faf3ebcf076
-  subdirs:
-    - Unbound
-    - RepLib
