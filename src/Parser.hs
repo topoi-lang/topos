@@ -212,8 +212,7 @@ pDecl = try pValBind <|> try pFuncBind <|> pTypeBind
 program :: Parser [Declaration] -- Statement where
 program = do
   skipMany (char '\n')
-  decls <- many (pDecl <* eof <?> "declarations")
-  pure $ decls
+  many (pDecl <* choice [eof, char '\n' $> ()]  <?> "declarations")
 
 parseSource :: String -> ByteString -> Either String [Declaration]
 parseSource filename src =
