@@ -1,6 +1,6 @@
 module Parser where
 
-import Protolude hiding (try, some)
+import Protolude hiding (try, some, many)
 import GHC.Base (String)
 import Data.Char
 import Data.Maybe (fromJust)
@@ -209,8 +209,14 @@ pValBind = do
 pDecl :: Parser Declaration
 pDecl = try pValBind <|> try pFuncBind <|> pTypeBind
 
-parseSource :: String -> ByteString -> Either String Declaration
+program :: Parser [Declaration] -- Statement where
+program = do
+  skipMany (char '\n')
+  decls <- many (pDecl <* eof <?> "declarations")
+  pure $ decls
+
+parseSource :: String -> ByteString -> Either String [Declaration]
 parseSource filename src =
-  case parse pDecl filename src of
+  case parse program filename src of
     Left e -> Left $ errorBundlePretty e
     Right decl -> Right decl

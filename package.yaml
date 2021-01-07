@@ -55,6 +55,7 @@ dependencies:
 - mtl
 - optparse-applicative
 - protolude
+- text
 - unordered-containers
 - utf8-string
 

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5bee07a07471e895b179b0ca47a42a4c1450a4403481e4c3e0cfc0a3cbbea641
+-- hash: b2ccfefccb9223e3acd6eb71c8a0e977c9d251688c75468b13bfe299ceb9caf0
 
 name:           topos
 version:        0.1.0.0
@@ -31,6 +31,7 @@ library
     , mtl
     , optparse-applicative
     , protolude
+    , text
     , unordered-containers
     , utf8-string
   default-language: Haskell2010
@@ -52,6 +53,7 @@ executable topos
     , mtl
     , optparse-applicative
     , protolude
+    , text
     , topos
     , unordered-containers
     , utf8-string
