@@ -31,6 +31,7 @@ data Ty
   | TyTuple [Ty]
   | TyArray Ty -- (Maybe Int)
   | TyFunction { arg :: Ty, ret :: Ty }
+  | TyBool -- until sum type is implemented
   deriving (Show)
   -- sum type
   -- record type
