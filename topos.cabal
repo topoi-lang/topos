@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 71225f94d56601f7aae71f5e3020fd3a0a6c079527ad3adcf935e9dda854d60d
+-- hash: d61277b90e6f5d99a4787b778085ae4b4ae3f505d2c507db9ac03695cf7fe685
 
 name:           topos
 version:        0.1.0.0
@@ -15,13 +15,17 @@ extra-source-files:
 
 library
   exposed-modules:
+      AST
+      FlatParse
+      Hasher
+      Lexer
       Parser
-      TypeCheck
+      Syntax
   other-modules:
       Paths_topos
   hs-source-dirs:
       src
-  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeFamilies TypeSynonymInstances ViewPatterns
+  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification ExplicitNamespaces FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MagicHash MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeFamilies TypeSynonymInstances UnboxedTuples ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
@@ -31,7 +35,8 @@ library
     , megaparsec
     , mtl
     , optparse-applicative
-    , protolude
+    , primitive
+    , template-haskell
     , text
     , unordered-containers
     , utf8-string
@@ -43,8 +48,8 @@ executable topos
       Paths_topos
   hs-source-dirs:
       app
-  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeFamilies TypeSynonymInstances ViewPatterns
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
+  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification ExplicitNamespaces FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MagicHash MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeFamilies TypeSynonymInstances UnboxedTuples ViewPatterns
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -fllvm
   build-depends:
       base
     , bytestring
@@ -53,7 +58,8 @@ executable topos
     , megaparsec
     , mtl
     , optparse-applicative
-    , protolude
+    , primitive
+    , template-haskell
     , text
     , topos
     , unordered-containers

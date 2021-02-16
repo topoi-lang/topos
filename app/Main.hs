@@ -1,14 +1,15 @@
 module Main where
 
-import Protolude hiding (readFile)
-import Protolude.Error (error)
-
-import qualified Parser
+import Prelude hiding (readFile, putStrLn)
 import Options.Applicative
-import Data.ByteString (readFile)
+import Control.Monad
+import System.Exit
+import System.IO (stderr)
+import Data.ByteString.Char8
+import Data.ByteString.UTF8 (fromString)
+
 import Paths_topos (version)
 import qualified Data.Version as Version
-import qualified Data.Text as TL
 
 data CompilerOpts = CompilerOpts
   { _showVersion :: Bool
@@ -38,9 +39,10 @@ main = do
   inputFilepath <- maybe inputFileNotFound pure (_inputSource flags)
   inputContent <- readFile inputFilepath
 
-  case Parser.parseSource inputFilepath inputContent of
-    Left err -> error $ TL.pack err
-    Right decls -> print decls
+  print inputContent
+  -- case Parser.parseSource inputFilepath inputContent of
+  --   Left err -> error $ TL.pack err
+  --   Right decls -> print decls
 
   where
     pref = prefs $ showHelpOnEmpty <> showHelpOnEmpty <> disambiguate <> columns 80
@@ -50,8 +52,8 @@ main = do
       <> progDesc "The only Topos compiler"
       <> footer "https://github.com/topoi-lang/topos"
 
-    printVersion = putStrLn $ "Topos compiler " <> Version.showVersion version
+    printVersion = putStrLn . fromString $ "Topos compiler " <> Version.showVersion version
 
     inputFileNotFound = do
-      hPutStrLn stderr ("Please specify an input file" :: [Char])
+      hPutStrLn stderr "Please specify an input file"
       exitFailure
