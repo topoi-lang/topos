@@ -55,7 +55,14 @@ pArrow = $(string "->")
 pIn = $(string "in")
 pAssign = $(char '=')
 
-pNat = $(string "Nat")
+pNat  = $(string "Nat")
+pBool = $(string "Bool")
+pT    = $(char 'T')
+pF    = $(char 'F')
+pZero = $(char 'Z')
+pSucc = $(char 'S')
+pPred = $(char 'P')
+pIsZero = $(string "isZero")
 
 -- Parser combinators ---------------------------------------------------------
 
@@ -71,16 +78,22 @@ pAtomicExpr = do
   l <- getPos
   $(FP.switch [| case _ of
     -- "_" -> do { r <- getPos; ws; pure $ Hole (Span l r) }
-    -- "(" -> ws *> pTm <* pParenR
+    -- "(" -> ws *> pAtomicExpr <* pParenR
     "let" -> skipToVar l $ \_ -> empty
     "in" -> skipToVar l $ \_ -> empty
     "Nat" -> skipToVar l $ \_ -> empty
+    "T" -> skipToVar l $ \r -> pure (T (Span l r))
+    "F" -> skipToVar l $ \r -> pure (F (Span l r))
+    "Z" -> skipToVar l $ \r -> pure (Zero (Span l r))
+    "S" -> skipToVar l $ \_ -> Succ <$> pAtomicExpr
+    "P" -> skipToVar l $ \_ -> Pred <$> pAtomicExpr
+    "isZero" -> skipToVar l $ \_ -> IsZero <$> pAtomicExpr
     _ -> do { identChar; manyIdents; r <- getPos; ws; pure $ Var (Span l r) } |])
 
 pType :: Parser Type
 pType = do
   pos <- getPos
-  t <- TNat <$ pNat -- TODO: now only support TNat
+  t <- (TNat <$ pNat) <|> (TBool <$ pBool) -- TODO: only supports TNat and TBool
   br pArrow
     (TArrow pos t <$> pType)
     (pure t)
