@@ -19,9 +19,9 @@ fnv1a64 (B.PS (ForeignPtr ptr _) (I# offset) (I# len)) = go start end offsetBasi
     end = plusAddr# start len
 
     go :: Addr# -> Addr# -> Word64 -> Word64
-    go ptr end hash = case eqAddr# ptr end of
+    go startPtr endPtr hash = case eqAddr# startPtr endPtr of
       1# -> hash
-      _  -> go (plusAddr# ptr 1#) end $ do
-        let byte = indexOffAddr# ptr 0# :: Word8
+      _  -> go (plusAddr# startPtr 1#) endPtr $ do
+        let byte = indexOffAddr# startPtr 0# :: Word8
         (hash `xor` fromIntegral byte) * fnvPrime
 {-# INLINE fnv1a64 #-}
