@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a7d8d2eeb0d00a5a5ec07fad3a6cc2ba3136d4e14809831dba957f2eeaf0e08a
+-- hash: 62e72a0fd9af1911345b2c3f16c2c3cebc82583f3f036ba49656dfcedb3e572f
 
 name:           topos
 version:        0.1.0.0
@@ -15,7 +15,8 @@ extra-source-files:
 
 library
   exposed-modules:
-      AST
+      Data.Name
+      Evaluate
       FlatParse
       Hasher
       Lexer
@@ -26,7 +27,7 @@ library
       Paths_topos
   hs-source-dirs:
       src
-  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification ExplicitNamespaces FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MagicHash MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeFamilies TypeSynonymInstances UnboxedTuples ViewPatterns
+  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DerivingVia DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification ExplicitNamespaces FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MagicHash MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeFamilies TypeSynonymInstances UnboxedTuples ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
@@ -49,7 +50,7 @@ executable topos
       Paths_topos
   hs-source-dirs:
       app
-  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification ExplicitNamespaces FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MagicHash MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeFamilies TypeSynonymInstances UnboxedTuples ViewPatterns
+  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DerivingVia DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification ExplicitNamespaces FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MagicHash MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeFamilies TypeSynonymInstances UnboxedTuples ViewPatterns
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -fllvm
   build-depends:
       base

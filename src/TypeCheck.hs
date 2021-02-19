@@ -89,6 +89,7 @@ runTypeCheck src e = case runExcept $ typeCheck src initEnv e of
   Right t  -> t
 
 -- Utilities ------------------------------------------------------------------
+-- Some of them will be needed when polymorphism is introduced
 
 -- | Normal form, computes normal form. It is guaranteed to terminate for
 -- typechecked terms.
