@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c1e35e6c3b7e90e94369ec3b8126174325337f5d4e3c65a0a23958d9f1ca7b1d
+-- hash: d08b1b76e20aa7edb5fa44f3b440df39b7ec651608e2dd9249e33fd9eef144ce
 
 name:           topos
 version:        0.1.0.0
@@ -72,7 +72,7 @@ test-suite general
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Test.Int2Word64IsBijective
+      Test.Int2Word64IsBijectiveSpec
       Paths_topos
   hs-source-dirs:
       test

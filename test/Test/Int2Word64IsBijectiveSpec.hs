@@ -1,4 +1,4 @@
-module Test.Int2Word64IsBijective (spec) where
+module Test.Int2Word64IsBijectiveSpec (spec) where
 
 import Test.Syd
 import Data.Word
@@ -7,6 +7,6 @@ import Test.QuickCheck
 
 spec :: Spec
 spec =
-  describe "Word64" .
+  describe "Numbers" .
     specify "Mapping from Word64 to Int is bijection" .
       property $ \n -> w64 (fromIntegral n) `shouldBe` (n :: Word64)
