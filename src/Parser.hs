@@ -1,86 +1,132 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Parser where
 
-import Text.Megaparsec
-import qualified Text.Megaparsec.Byte as B
-import qualified Text.Megaparsec.Byte.Lexer as L
+import Data.Char
 
-import Data.Char (isAlphaNum, chr)
-import Data.ByteString.Internal (ByteString, c2w)
-import Data.ByteString (pack)
-import GHC.Word (Word8)
-import Data.Void (Void)
+import FlatParse hiding (Parser, runParser, char, string, err, switch)
+import qualified FlatParse as FP
+import Syntax
+import Lexer
 
-import Term
-import Name (Name, toName)
+-- Identifier -------------------------------------------------------------------------------------
+identStartChar :: Parser ()
+identStartChar =
+  () <$ satisfy' isLatinLetter isGreekLetter isLetter isLetter
+{-# inline identStartChar #-}
 
-type Parser = Parsec Void ByteString
+identChar :: Parser ()
+identChar =
+  () <$ satisfy' (\c -> isLatinLetter c || FlatParse.isDigit c) isGreekLetter isAlphaNum isAlphaNum
 
-ws :: Parser ()
-ws = L.space B.space1 (L.skipLineComment "--") (L.skipBlockComment "{-" "}-")
+inlineIdentChar :: Parser ()
+inlineIdentChar =
+  () <$ satisfy' (\c -> isLatinLetter c || FlatParse.isDigit c) isGreekLetter isAlphaNum isAlphaNum
+{-# inline inlineIdentChar #-}
 
-lexeme = L.lexeme ws -- so I no need to append `<* spaces` everywhere
-symbol s = lexeme (B.string s)
-char c = lexeme (B.char . c2w $ c)
-parens p = char '(' *> p <* char ')'
-braced p = char '{' *> p <* char '}'
+manyIdents :: Parser ()
+manyIdents = many_ inlineIdentChar
 
--- | Convert a byte to char.
-toChar :: Word8 -> Char
-toChar = chr . fromIntegral
-{-# INLINE toChar #-}
+skipToSpan :: Pos -> Parser Span
+skipToSpan l = br identChar
+  (do {manyIdents; r <- getPos; ws; pure (Span l r)})
+  empty
+{-# inline skipToSpan #-}
 
-keyword :: ByteString -> Bool
-keyword x = x == "let" || x == "in"
+-- This parses only the indentifier, will skip the builtin keyword
+pIdent :: Parser Span
+pIdent = do
+  checkIndent
+  l <- getPos
+  $(FP.switch [| case _ of
+    "let"     -> skipToSpan l
+    "in"      -> skipToSpan l
+    _         -> do {identStartChar; manyIdents; r <- getPos; ws; pure (Span l r)} |])
 
-pIdentifier :: Parser Name
-pIdentifier = do
-  x <- takeWhile1P Nothing (isAlphaNum . toChar)
-  toName x <$ ws
+pMinus = $(char '-')
+pComma = $(char ',')
+pDot = $(char '.')
+pColon = $(char ':')
+pParenL = $(char '(')
+pParenR = $(char ')')
+pBraceL = $(char '{')
+pBraceR = $(char '}')
+pBracketL = $(char '[')
+pbracketR = $(char ']')
+pArrow = $(string "->")
+pIn = $(string "in")
+pAssign = $(char '=')
 
-pBind :: Parser Name
-pBind = pIdentifier <|> (toName <$> symbol "_")
+pNat  = $(string "Nat")
+pBool = $(string "Bool")
+pT    = $(char 'T')
+pF    = $(char 'F')
+pZero = $(char 'Z')
+pSucc = $(char 'S')
+pPred = $(char 'P')
+pIsZero = $(string "isZero")
 
-pString :: Parser ByteString
-pString = pack <$> (char '\"' *> manyTill anySingle (char '\"'))
+-- Parser combinators ---------------------------------------------------------
 
-pNumber :: Parser Int
-pNumber = lexeme L.decimal
+skipToVar :: Pos -> (Pos -> Parser Expr) -> Parser Expr
+skipToVar l p = br identChar
+  (do { manyIdents; r <- getPos; ws; pure $ Var (Span l r) })
+  (do { r <- getPos; ws; p r })
+{-# inline skipToVar #-}
 
-pAtomicLit :: Parser Lit
-pAtomicLit = choice [ LInt <$> pNumber
-                   , LBool True <$ symbol "true"
-                   , LBool False <$ symbol "false"
-                   , LString <$> pString
-                   ]
+pAtomicExpr :: Parser Expr
+pAtomicExpr = do
+  checkIndent
+  l <- getPos
+  $(FP.switch [| case _ of
+    -- "_" -> do { r <- getPos; ws; pure $ Hole (Span l r) }
+    -- "(" -> ws *> pAtomicExpr <* pParenR
+    "let" -> skipToVar l $ \_ -> empty
+    "in" -> skipToVar l $ \_ -> empty
+    "Nat" -> skipToVar l $ \_ -> empty
+    "T" -> skipToVar l $ \r -> pure (T (Span l r))
+    "F" -> skipToVar l $ \r -> pure (F (Span l r))
+    "Z" -> skipToVar l $ \r -> pure (Zero (Span l r))
+    "S" -> skipToVar l $ \_ -> Succ <$> pAtomicExpr
+    "P" -> skipToVar l $ \_ -> Pred <$> pAtomicExpr
+    "isZero" -> skipToVar l $ \_ -> IsZero <$> pAtomicExpr
+    _ -> do { identChar; manyIdents; r <- getPos; ws; pure $ Var (Span l r) } |])
 
-atomicTerm :: Parser Term
-atomicTerm = (Var <$> pIdentifier)
-         <|> (Lit <$> pAtomicLit)
-         <|> parens atomicTerm
+pType :: Parser Type
+pType = do
+  pos <- getPos
+  t <- (TNat <$ pNat) <|> (TBool <$ pBool) -- TODO: only supports TNat and TBool
+  br pArrow
+    (TArrow pos t <$> pType)
+    (pure t)
 
-typeParse :: Parser Type
-typeParse = choice
-  [ TInt <$ symbol "Int"
-  , TBool <$ symbol "Bool"
-  ]
+pLet :: Pos -> Parser Expr
+pLet pos = do
+  x <- pIdent <?> "expected an identifier"
+  $(switch [| case _ of
+    "=" -> do
+      t <- pAtomicExpr
+      pIn <?> "expected \"in\" in let expression"
+      u <- pAtomicExpr
+      pure $ Let pos x Nothing t u
+    ":" -> do
+      a <- pType
+      pAssign <?> "expected \"=\" in let expression"
+      t <- pAtomicExpr
+      pIn <?> "expected \"in\" in let expression"
+      u <- pAtomicExpr
+      pure $ Let pos x (Just a) t u
+    _ -> err "expected \":\" or \"=\" in let expression" |])
 
-bindingWithTypeAnnotation :: Parser (Name, Type)
-bindingWithTypeAnnotation = parens ((,) <$> pBind <*> (char ':' *> typeParse))
+pLamLetExp :: Parser Expr
+pLamLetExp = do
+  checkIndent
+  l <- getPos
+  $(FP.switch [| case _ of
+    -- where is Lam ?
+    "let" -> skipToVar l $ \_ -> pLet l
+    _ -> ws >> pAtomicExpr |])
 
-pLambda :: Parser Term
-pLambda = do
-  char '\\'
-  bindingsWType <- some bindingWithTypeAnnotation
-  char '.'
-  term <- atomicTerm
-  pure $ foldr (\(name, ty) term -> Lam name ty term) term bindingsWType
+pAppExp :: Parser Expr
+pAppExp = checkIndent >> foldl1 App <$> some pAtomicExpr
 
--- entrypoint
-termParser :: Parser Term
-termParser = ws *> pLambda <* eof
-
-parseSrc :: String -> ByteString -> Either String Term
-parseSrc filename src = case parse termParser filename src of
-  Left e -> Left $ errorBundlePretty e
-  Right t -> Right t
+pSrc :: Parser Expr
+pSrc = ws *> pAppExp <|> pLamLetExp <* eof

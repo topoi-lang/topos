@@ -3,15 +3,66 @@ version: 0.1.0.0
 license: BSD3
 
 extra-source-files:
-- readme
+- README.md
+
+default-extensions:
+- BangPatterns
+- BinaryLiterals
+- ConstraintKinds
+- DataKinds
+- DefaultSignatures
+- DeriveAnyClass
+- DeriveDataTypeable
+- DeriveFoldable
+- DeriveFunctor
+- DeriveGeneric
+- DerivingStrategies
+- DerivingVia
+- DeriveTraversable
+- DoAndIfThenElse
+- EmptyDataDecls
+- ExistentialQuantification
+- ExplicitNamespaces
+- FlexibleContexts
+- FlexibleInstances
+- FunctionalDependencies
+- GADTs
+- GeneralizedNewtypeDeriving
+- InstanceSigs
+- KindSignatures
+- LambdaCase
+- MagicHash
+- MultiParamTypeClasses
+- MultiWayIf
+- NamedFieldPuns
+#- NoImplicitPrelude
+- OverloadedStrings
+- PartialTypeSignatures
+- PatternGuards
+- PatternSynonyms
+- PolyKinds
+- RankNTypes
+- RecordWildCards
+- ScopedTypeVariables
+- StandaloneDeriving
+- TemplateHaskell
+- TupleSections
+- TypeFamilies
+- TypeSynonymInstances
+- UnboxedTuples
+- ViewPatterns
 
 dependencies:
 - base
-- bytestring >= 0.10.12.0
+- bytestring
 - containers
 - hashable
 - megaparsec
+- mtl
 - optparse-applicative
+- primitive
+- template-haskell
+- text
 - unordered-containers
 - utf8-string
 
@@ -22,11 +73,27 @@ library:
 executables:
   topos:
     main: Main.hs
-    source-dirs: main
+    source-dirs: app
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     - -Wall
+    - -fllvm
     dependencies:
     - topos
+
+tests:
+  general:
+    main: Spec.hs
+    source-dirs: test
+    build-tools: sydtest-discover
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - sydtest
+    - sydtest-discover
+    - QuickCheck
+    - bits

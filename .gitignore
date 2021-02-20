@@ -1,2 +1,4 @@
 .stack-work
 *.lock
+dist-newstyle
+topos.cabal
