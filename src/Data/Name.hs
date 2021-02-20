@@ -4,8 +4,9 @@ import qualified Data.ByteString as B
 import Data.Hashable
 import Hasher (fnv1a64)
 
-newtype RawName = RawName { unRawName :: B.ByteString }
+newtype Name = Name { unName :: B.ByteString }
   deriving (Show, Eq) via B.ByteString 
 
-instance Hashable RawName where
-  hashWithSalt _salt (RawName str) = fromIntegral (fnv1a64 str)
+-- TODO: casting from Word64 to Int is ill-defined and not going to be bijective.
+instance Hashable Name where
+  hashWithSalt _salt (Name str) = fromIntegral (fnv1a64 str)

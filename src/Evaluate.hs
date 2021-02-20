@@ -33,35 +33,43 @@ module Evaluate where
 
     NOTE: The result doesn't depend on the evaluation order if it is pure.
     Reference: http://plzoo.andrej.com/language/levy.html
+    Reference: https://www.reddit.com/r/haskell/comments/4rvssi/is_nameless_representation_worth_the_trouble_why/
 -}
 
 import qualified Data.ByteString as B
 import Syntax
 import Data.Maybe
+import Data.Name
+import FlatParse (Span)
+import qualified FlatParse as FP
 
-type Name = B.ByteString
+data Ctx = Ctx
+  { _fileName :: FilePath
+  , _src      :: B.ByteString
+  } deriving Show
 
-data Spine = SNil | SApp Spine ~Value
+span2Name :: Ctx -> Span -> Name
+span2Name ctx s = Name $ FP.unsafeSpan2ByteString (_src ctx) s
 
-data Value
-  = VLam Name (Value -> Value)
-  | VLocal Name Spine
-  | VTop Name Spine ~Value
+data Spine = SNil | SApp Spine ~Val
+data Val = VLam Name (Val -> Val) | VLoc Name Spine | VTop Name Spine ~Val
 
-type TopEnv = [(Name, Value)]
-newtype LocalEnv = LocalEnv [(Name, Value)]
+type TopEnv = [(Name, Val)]
+type LocEnv = [(Name, Val)]
 
-fresh :: LocalEnv -> Name -> Name
-fresh (LocalEnv r) x = case lookup x r of
-  Nothing -> x
-  Just{}  -> fresh (LocalEnv r) (x <> "'")
+data Var a = Free a | Bound Int
+type LocallyNameless a = Var a
 
--- | `vapp` acts on both branches of VTop.
--- The `vapp t u` can be arbitrarily costly, so it is delayed
-vapp :: Value -> Value -> Value
+eval :: Ctx -> TopEnv -> LocEnv -> Expr -> Val
+eval ctx top loc = \case
+  Var s   -> VTop x SNil (fromJust $ lookup x top) where x = span2Name ctx s
+  App t u -> vapp (eval ctx top loc t) (eval ctx top loc u)
+  Let _ s _t t u -> eval ctx top ((x, eval ctx top loc t):loc) u where x = span2Name ctx s
+  Lam s _t e -> VLam x $ \u -> eval ctx top ((x, u):loc) e where x = span2Name ctx s
+  -- T
+  -- F ?
+
+vapp :: Val -> Val -> Val
 vapp (VLam _ t)    ~u = t u
-vapp (VLocal x sp) ~u = VLocal x (SApp sp u)
+vapp (VLoc x sp)   ~u = VLoc x (SApp sp u)
 vapp (VTop x sp t) ~u = VTop x (SApp sp u) (vapp t u)
-
-eval :: TopEnv -> LocalEnv -> Expr -> Value
-eval top local = undefined
