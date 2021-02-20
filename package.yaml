@@ -86,7 +86,8 @@ executables:
 tests:
   general:
     main: Spec.hs
-    source-dirs: tests
+    source-dirs: test
+    build-tools: sydtest-discover
     ghc-options:
     - -threaded
     - -rtsopts

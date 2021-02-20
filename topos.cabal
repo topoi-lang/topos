@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b5cee9d67227851c5212ebd1c70cb189a2b0ca07d68149a0a84e4eeac734fd2b
+-- hash: c1e35e6c3b7e90e94369ec3b8126174325337f5d4e3c65a0a23958d9f1ca7b1d
 
 name:           topos
 version:        0.1.0.0
@@ -75,9 +75,11 @@ test-suite general
       Test.Int2Word64IsBijective
       Paths_topos
   hs-source-dirs:
-      tests
+      test
   default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DerivingVia DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification ExplicitNamespaces FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MagicHash MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeFamilies TypeSynonymInstances UnboxedTuples ViewPatterns
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      sydtest-discover:sydtest-discover
   build-depends:
       QuickCheck
     , base
