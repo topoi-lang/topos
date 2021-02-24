@@ -97,7 +97,7 @@ nf :: Expr -> Expr
 nf ee = spine ee []
   where
     spine (App f arg) args = spine f (arg: args)
-    spine (Lam s t e) [] = Lam s t (nf e)
+    spine (Lam pos s t e) [] = Lam pos s t (nf e)
     -- spine (Lam span _ e) (arg:args) = spine (subst s a e) as
     spine f as = app f as
     app f as = foldl App f (nf <$> as)

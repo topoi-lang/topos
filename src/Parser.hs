@@ -124,17 +124,17 @@ pBind :: Parser Span
 pBind = pIdent
 
 pLam :: Pos -> Parser Expr
-pLam _pos = do -- TODO: soon lambda has to take the starting pos
+pLam pos = do
   s <- pBind <?> "expected an argument, binder"
   $(switch [| case _ of
     "." -> do
       e <- pLamLetExp
-      pure $ Lam s Nothing e
+      pure $ Lam pos s Nothing e
     ":" -> do
       t <- pType
       pDot <?> "expected \".\" in let expression"
       e <- pLamLetExp
-      pure $ Lam s (Just t) e
+      pure $ Lam pos s (Just t) e
     |])
 
 pLamLetExp :: Parser Expr

@@ -86,7 +86,7 @@ toTerm ctx top loc = \case
   Syntax.App fn arg -> App (toTerm ctx top loc fn) (toTerm ctx top loc arg)
 
   -- \x . e = [x/e]
-  Syntax.Lam span _t e -> Lam name (toTerm ctx top shiftedLoc e)
+  Syntax.Lam _ span _t e -> Lam name (toTerm ctx top shiftedLoc e)
     where
       name = span2Name ctx span
       shiftedLoc = (name, 0): fmap (\(n, i) -> (n, i+1)) loc
