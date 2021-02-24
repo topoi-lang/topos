@@ -1,4 +1,6 @@
 {-# LANGUAGE BlockArguments #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# OPTIONS_GHC -fobject-code #-}
 
 {-
@@ -466,7 +468,9 @@ fails (Parser f) = Parser \r eob s n ->
 {-# INLINE fails #-}
 
 -- | Byte offset counted backwards from the end of the buffer.
-newtype Pos = Pos Int deriving (Eq, Show)
+newtype Pos = Pos Int 
+  deriving (Eq, Show)
+  deriving newtype (Num)
 
 instance Ord Pos where
   Pos p <= Pos p' = p' <= p

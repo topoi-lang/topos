@@ -16,8 +16,8 @@ data Type = TNat | TBool | TArrow Pos Type Type
 data Expr
   = Var Span
   | App Expr Expr
-  | Lam Span Type Expr
-  | Let Pos Span (Maybe Type) Expr Expr -- let (x : a) = t in u
+  | Lam Span (Maybe Type) Expr
+  | Let Pos Span (Maybe Type) Expr Expr -- let (x : a) = t in u OR let x = t in u
 
   | T    Span
   | F    Span
@@ -26,3 +26,5 @@ data Expr
   | Pred Expr
   | IsZero Expr
   deriving Show
+
+type X = (Expr, Span)

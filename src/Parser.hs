@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 module Parser where
 
 import Data.Char
@@ -39,6 +40,7 @@ pIdent = do
   $(FP.switch [| case _ of
     "let"     -> skipToSpan l
     "in"      -> skipToSpan l
+    "\\"      -> skipToSpan l
     _         -> do {identStartChar; manyIdents; r <- getPos; ws; pure (Span l r)} |])
 
 pMinus = $(char '-')
@@ -79,21 +81,21 @@ pAtomicExpr = do
   $(FP.switch [| case _ of
     -- "_" -> do { r <- getPos; ws; pure $ Hole (Span l r) }
     -- "(" -> ws *> pAtomicExpr <* pParenR
-    "let" -> skipToVar l $ \_ -> empty
-    "in" -> skipToVar l $ \_ -> empty
-    "Nat" -> skipToVar l $ \_ -> empty
-    "T" -> skipToVar l $ \r -> pure (T (Span l r))
-    "F" -> skipToVar l $ \r -> pure (F (Span l r))
-    "Z" -> skipToVar l $ \r -> pure (Zero (Span l r))
-    "S" -> skipToVar l $ \_ -> Succ <$> pAtomicExpr
-    "P" -> skipToVar l $ \_ -> Pred <$> pAtomicExpr
+    "let" -> skipToVar l \_ -> empty
+    "in" -> skipToVar l \_ -> empty
+    "Nat" -> skipToVar l \_ -> empty
+    "T" -> skipToVar l \r -> pure (T (Span l r))
+    "F" -> skipToVar l \r -> pure (F (Span l r))
+    "Z" -> skipToVar l \r -> pure (Zero (Span l r))
+    "S" -> skipToVar l \_ -> Succ <$> pAtomicExpr
+    "P" -> skipToVar l \_ -> Pred <$> pAtomicExpr
     "isZero" -> skipToVar l $ \_ -> IsZero <$> pAtomicExpr
     _ -> do { identChar; manyIdents; r <- getPos; ws; pure $ Var (Span l r) } |])
 
 pType :: Parser Type
 pType = do
   pos <- getPos
-  t <- (TNat <$ pNat) <|> (TBool <$ pBool) -- TODO: only supports TNat and TBool
+  t <- (TNat <$ pNat) <|> (TBool <$ pBool) -- HARDCODED, TODO: only supports TNat and TBool
   br pArrow
     (TArrow pos t <$> pType)
     (pure t)
@@ -103,27 +105,46 @@ pLet pos = do
   x <- pIdent <?> "expected an identifier"
   $(switch [| case _ of
     "=" -> do
-      t <- pAtomicExpr
+      t <- pLamLetExp
       pIn <?> "expected \"in\" in let expression"
-      u <- pAtomicExpr
+      u <- pLamLetExp
       pure $ Let pos x Nothing t u
     ":" -> do
       a <- pType
       pAssign <?> "expected \"=\" in let expression"
-      t <- pAtomicExpr
+      t <- pLamLetExp
       pIn <?> "expected \"in\" in let expression"
-      u <- pAtomicExpr
+      u <- pLamLetExp
       pure $ Let pos x (Just a) t u
     _ -> err "expected \":\" or \"=\" in let expression" |])
+
+-- TODO: support Hole '_'
+-- TODO: support different bind type
+pBind :: Parser Span
+pBind = pIdent
+
+pLam :: Pos -> Parser Expr
+pLam _pos = do -- TODO: soon lambda has to take the starting pos
+  s <- pBind <?> "expected an argument, binder"
+  $(switch [| case _ of
+    "." -> do
+      e <- pLamLetExp
+      pure $ Lam s Nothing e
+    ":" -> do
+      t <- pType
+      pDot <?> "expected \".\" in let expression"
+      e <- pLamLetExp
+      pure $ Lam s (Just t) e
+    |])
 
 pLamLetExp :: Parser Expr
 pLamLetExp = do
   checkIndent
   l <- getPos
   $(FP.switch [| case _ of
-    -- where is Lam ?
-    "let" -> skipToVar l $ \_ -> pLet l
-    _ -> ws >> pAtomicExpr |])
+    "\\" -> ws >> pLam l
+    "let" -> skipToVar l \_ -> pLet l
+    _ -> ws >> pAppExp |])
 
 pAppExp :: Parser Expr
 pAppExp = checkIndent >> foldl1 App <$> some pAtomicExpr

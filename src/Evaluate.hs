@@ -1,4 +1,4 @@
-{-# LANGUAGE Strict, BlockArguments #-}
+{-# LANGUAGE Strict, BlockArguments, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wincomplete-patterns #-}
 
 module Evaluate where
@@ -36,12 +36,19 @@ module Evaluate where
     Reference: https://www.reddit.com/r/haskell/comments/4rvssi/is_nameless_representation_worth_the_trouble_why/
 -}
 
+import Prelude hiding (span)
 import qualified Data.ByteString as B
-import Syntax
+import qualified Syntax
 import Data.Maybe
 import Data.Name
-import FlatParse (Span)
+import FlatParse (Span, Result(Err, OK))
 import qualified FlatParse as FP
+import Data.List (findIndex)
+import Data.HashMap.Strict (HashMap, insert, empty)
+
+
+import qualified Lexer
+import Parser
 
 data Ctx = Ctx
   { _fileName :: FilePath
@@ -54,22 +61,54 @@ span2Name ctx s = Name $ FP.unsafeSpan2ByteString (_src ctx) s
 data Spine = SNil | SApp Spine ~Val
 data Val = VLam Name (Val -> Val) | VLoc Name Spine | VTop Name Spine ~Val
 
-type TopEnv = [(Name, Val)]
-type LocEnv = [(Name, Val)]
+type TopEnv = HashMap Name Term -- Unordered, so Name doesn't need Ord instance
+type LocEnv = [(Name, Int)]
 
-data Var a = Free a | Bound Int
-type LocallyNameless a = Var a
+findFirst :: LocEnv -> Name -> Maybe Int
+findFirst loc n = findIndex (\(name, _) -> name == n) loc
 
-eval :: Ctx -> TopEnv -> LocEnv -> Expr -> Val
-eval ctx top loc = \case
-  Var s   -> VTop x SNil (fromJust $ lookup x top) where x = span2Name ctx s
-  App t u -> vapp (eval ctx top loc t) (eval ctx top loc u)
-  Let _ s _t t u -> eval ctx top ((x, eval ctx top loc t):loc) u where x = span2Name ctx s
-  Lam s _t e -> VLam x $ \u -> eval ctx top ((x, u):loc) e where x = span2Name ctx s
-  -- T
-  -- F ?
+-- also a kind of locally nameless
+data Term
+  = Local Int -- De Bruijn Index, corresponding to Bounded
+  | Top   Name -- top level name, corresponding to Free Var
+  | App Term Term
+  | Lam Name Term
+  deriving Show
 
-vapp :: Val -> Val -> Val
-vapp (VLam _ t)    ~u = t u
-vapp (VLoc x sp)   ~u = VLoc x (SApp sp u)
-vapp (VTop x sp t) ~u = VTop x (SApp sp u) (vapp t u)
+toTerm :: Ctx -> TopEnv -> LocEnv -> Syntax.Expr -> Term
+toTerm ctx top loc = \case
+
+  Syntax.Var span -> let name = span2Name ctx span in
+    case findFirst loc name of
+      Just dbi -> Local dbi
+      Nothing  -> Top name
+
+  Syntax.App fn arg -> App (toTerm ctx top loc fn) (toTerm ctx top loc arg)
+
+  -- \x . e = [x/e]
+  Syntax.Lam span _t e -> Lam name (toTerm ctx top shiftedLoc e)
+    where
+      name = span2Name ctx span
+      shiftedLoc = (name, 0): fmap (\(n, i) -> (n, i+1)) loc
+
+  -- let x: a = t in u
+  -- [x/t] u
+  Syntax.Let _ span _a t u ->
+    App (Lam name (toTerm ctx top shiftedLoc t)) (toTerm ctx top loc u)
+      where
+        name = span2Name ctx span
+        shiftedLoc = (name, 0): fmap (\(n, i) -> (n, i+1)) loc
+
+  Syntax.T{} -> undefined 
+  Syntax.F{} -> undefined
+  Syntax.Zero{} -> undefined
+  Syntax.Succ{} -> undefined
+  Syntax.Pred{} -> undefined
+  Syntax.IsZero{} -> undefined
+
+testTerm :: B.ByteString -> Term
+testTerm bs = case Lexer.runParser pSrc (_src ctx) of
+  OK ee _ _ -> toTerm ctx empty mempty ee
+  _ -> error "some error"
+  where
+    ctx = Ctx{ _fileName="", _src=bs }

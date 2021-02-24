@@ -40,53 +40,53 @@ lookupVar (Env r) s = case lookup s r of
   Just t  -> pure t
   Nothing -> throwError (UnknownVar s)
 
-typeCheck :: SourceUnit -> Env -> Expr -> TypeCheckM Type
-typeCheck src r (Var s) = lookupVar r (span2ByteString src s)
-typeCheck _ _ (T _) = pure TBool
-typeCheck _ _ (F _) = pure TBool
-typeCheck _ _ (Zero _) = pure TNat
-typeCheck src r (Succ a) = do
-  at <- typeCheck src r a
-  case at of
-    TNat -> pure TNat
-    _    -> throwError (TypeMismatch at TNat)
+-- typeCheck :: SourceUnit -> Env -> Expr -> TypeCheckM Type
+-- typeCheck src r (Var s) = lookupVar r (span2ByteString src s)
+-- typeCheck _ _ (T _) = pure TBool
+-- typeCheck _ _ (F _) = pure TBool
+-- typeCheck _ _ (Zero _) = pure TNat
+-- typeCheck src r (Succ a) = do
+--   at <- typeCheck src r a
+--   case at of
+--     TNat -> pure TNat
+--     _    -> throwError (TypeMismatch at TNat)
 
-typeCheck src r (Pred a) = do
-  at <- typeCheck src r a
-  case at of
-    TNat -> pure TNat
-    _    -> throwError (TypeMismatch at TNat)
+-- typeCheck src r (Pred a) = do
+--   at <- typeCheck src r a
+--   case at of
+--     TNat -> pure TNat
+--     _    -> throwError (TypeMismatch at TNat)
 
-typeCheck src r (IsZero a) = do
-  at <- typeCheck src r a
-  case at of
-    TNat -> pure TBool
-    _    -> throwError (TypeMismatch at TNat)
+-- typeCheck src r (IsZero a) = do
+--   at <- typeCheck src r a
+--   case at of
+--     TNat -> pure TBool
+--     _    -> throwError (TypeMismatch at TNat)
 
-typeCheck src r (App f a) = do
-  ft <- typeCheck src r f
-  case ft of
-    TArrow _ at_userDefined rt -> do
-      at <- typeCheck src r a
-      when (at /= at_userDefined) $ throwError (TypeMismatch at at_userDefined)
-      return rt
-    _ -> throwError AppliedNonFunction
+-- typeCheck src r (App f a) = do
+--   ft <- typeCheck src r f
+--   case ft of
+--     TArrow _ at_userDefined rt -> do
+--       at <- typeCheck src r a
+--       when (at /= at_userDefined) $ throwError (TypeMismatch at at_userDefined)
+--       return rt
+--     _ -> throwError AppliedNonFunction
 
-typeCheck src r (Lam s@(Span l _) t e) = do
-  let sym = span2ByteString src s
-  TArrow l t <$> typeCheck src (extend sym t r) e
+-- typeCheck src r (Lam s@(Span l _) t e) = do
+--   let sym = span2ByteString src s
+--   TArrow l t <$> typeCheck src (extend sym t r) e
 
-typeCheck src r (Let _ s (Just at) _term u) = do
-  let sym = span2ByteString src s
-  typeCheck src (extend sym at r) u
+-- typeCheck src r (Let _ s (Just at) _term u) = do
+--   let sym = span2ByteString src s
+--   typeCheck src (extend sym at r) u
 
--- TODO: leave it to type inference
-typeCheck _ _ (Let _ _ Nothing _ _) = undefined
+-- -- TODO: leave it to type inference
+-- typeCheck _ _ (Let _ _ Nothing _ _) = undefined
 
-runTypeCheck :: SourceUnit -> Expr -> Type
-runTypeCheck src e = case runExcept $ typeCheck src initEnv e of
-  Left msg -> error . show $ msg
-  Right t  -> t
+-- runTypeCheck :: SourceUnit -> Expr -> Type
+-- runTypeCheck src e = case runExcept $ typeCheck src initEnv e of
+--   Left msg -> error . show $ msg
+--   Right t  -> t
 
 -- Utilities ------------------------------------------------------------------
 -- Some of them will be needed when polymorphism is introduced
