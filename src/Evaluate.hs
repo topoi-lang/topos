@@ -1,5 +1,4 @@
-{-# LANGUAGE Strict, BlockArguments, ScopedTypeVariables #-}
-{-# OPTIONS_GHC -Wincomplete-patterns #-}
+{-# LANGUAGE Strict, BlockArguments #-}
 
 module Evaluate where
 
@@ -36,16 +35,16 @@ module Evaluate where
     Reference: https://www.reddit.com/r/haskell/comments/4rvssi/is_nameless_representation_worth_the_trouble_why/
 -}
 
-import Prelude hiding (span)
+import Prelude hiding (span, lookup)
 import qualified Data.ByteString as B
 import qualified Syntax
 import Data.Maybe
 import Data.Name
 import FlatParse (Span, Result(Err, OK))
 import qualified FlatParse as FP
-import Data.List (findIndex)
-import Data.HashMap.Strict (HashMap, insert, empty)
-
+import Data.List (findIndex, elemIndex)
+import Data.HashMap.Strict (HashMap, insert, empty, lookup)
+import qualified Data.HashMap.Strict as HM
 
 import qualified Lexer
 import Parser
@@ -58,14 +57,11 @@ data Ctx = Ctx
 span2Name :: Ctx -> Span -> Name
 span2Name ctx s = Name $ FP.unsafeSpan2ByteString (_src ctx) s
 
-data Spine = SNil | SApp Spine ~Val
-data Val = VLam Name (Val -> Val) | VLoc Name Spine | VTop Name Spine ~Val
-
-type TopEnv = HashMap Name Term -- Unordered, so Name doesn't need Ord instance
-type LocEnv = [(Name, Int)]
+type TopEnv = [(Name, Term)]
+type LocEnv = [Name] -- doesn't need to shift `(name, 0): fmap (\(n, i) -> (n, i+1)) loc`
 
 findFirst :: LocEnv -> Name -> Maybe Int
-findFirst loc n = findIndex (\(name, _) -> name == n) loc
+findFirst = flip elemIndex
 
 -- also a kind of locally nameless
 data Term
@@ -86,20 +82,18 @@ toTerm ctx top loc = \case
   Syntax.App fn arg -> App (toTerm ctx top loc fn) (toTerm ctx top loc arg)
 
   -- \x . e = [x/e]
-  Syntax.Lam _ span _t e -> Lam name (toTerm ctx top shiftedLoc e)
+  Syntax.Lam _ span _t e -> Lam name (toTerm ctx top (name:loc) e)
     where
       name = span2Name ctx span
-      shiftedLoc = (name, 0): fmap (\(n, i) -> (n, i+1)) loc
 
   -- let x: a = t in u
   -- [x/t] u
   Syntax.Let _ span _a t u ->
-    App (Lam name (toTerm ctx top shiftedLoc t)) (toTerm ctx top loc u)
+    App (Lam name (toTerm ctx top (name:loc) t)) (toTerm ctx top loc u)
       where
         name = span2Name ctx span
-        shiftedLoc = (name, 0): fmap (\(n, i) -> (n, i+1)) loc
 
-  Syntax.T{} -> undefined 
+  Syntax.T{} -> undefined
   Syntax.F{} -> undefined
   Syntax.Zero{} -> undefined
   Syntax.Succ{} -> undefined
@@ -108,7 +102,76 @@ toTerm ctx top loc = \case
 
 testTerm :: B.ByteString -> Term
 testTerm bs = case Lexer.runParser pSrc (_src ctx) of
-  OK ee _ _ -> toTerm ctx empty mempty ee
+  OK ee _ _ -> toTerm ctx [] mempty ee
   _ -> error "some error"
   where
     ctx = Ctx{ _fileName="", _src=bs }
+
+-- TODO: should write some tests regarding to the term equality
+  -- NOTE: https://boarders.github.io/posts/locally-nameless.html
+
+-------------------------------------------------------------------------------
+-- Original: https://gist.github.com/AndrasKovacs/a0e0938113b193d6b9c1c0620d853784
+-- More Clearer: https://github.com/Boarders/NbE-untyped/blob/master/Main.hs
+
+data Spine
+  = SNil              -- empty spine for top level definitions
+  | SApp Spine ~Val   -- stuck application
+  deriving Show
+
+data Val
+  = VLam Name (Val -> Val)
+  | VLoc Int  Spine
+  | VTop Name Spine ~Val
+  deriving Show
+
+-- TODO: try a way to get rid of this.
+instance Show (Val -> Val) where
+  show _ = "[ C L O S U R E ]"
+
+type VTopEnv = HashMap Name Val
+type VLocEnv = [Val] -- TODO: check whether this is needed or not
+
+evalLocEnv :: Int -> VLocEnv -> Val
+evalLocEnv = flip (!!)
+
+evalTopEnv :: Name -> VTopEnv -> Val
+evalTopEnv name = fromJust . lookup name
+
+eval :: VTopEnv -> VLocEnv -> Term -> Val
+eval top loc = \case
+  Local i -> evalLocEnv i loc
+  Top n   -> evalTopEnv n top
+  App t u -> vapp (eval top loc t) (eval top loc u)
+  Lam n t -> VLam n \val -> eval top (val:loc) t
+
+vapp :: Val -> Val -> Val
+vapp (VLam _n body)        ~arg = body arg
+vapp (VLoc lvl spine)      ~arg = VLoc lvl  (SApp spine arg)
+vapp (VTop name spine val) ~arg = VTop name (SApp spine arg) (vapp val arg)
+
+evalWithTerm :: TopEnv -> Term -> Val
+evalWithTerm top tm = eval topvals [] tm where
+  topvals = foldl
+    (\topmap (name, term) -> insert name (eval topmap [] term) topmap)
+    empty
+    top
+
+--- Test
+
+($$) :: Term -> Term -> Term
+($$) = App
+infixl 8 $$
+
+predefinedTop :: TopEnv
+predefinedTop =
+  [ (Name "zero", Lam (Name "s") . Lam (Name "z") $ Local 0)
+  , (Name "succ",
+       let
+         nsz = Local 2 $$ Local 1 $$ Local 0
+         s   = Local 1
+       in
+         Lam (Name "n") . Lam (Name "s") . Lam (Name "z") $ s $$ nsz)
+  ]
+
+-- evalWithTerm predefinedTop (testTerm "succ zero")
