@@ -69,6 +69,7 @@ data Term
   | Top   Name -- top level name, corresponding to Free Var
   | App Term Term
   | Lam Name Term
+  | Bottom Bool
   deriving Show
 
 toTerm :: Ctx -> TopEnv -> LocEnv -> Syntax.Expr -> Term
@@ -89,12 +90,12 @@ toTerm ctx top loc = \case
   -- let x: a = t in u
   -- [x/t] u
   Syntax.Let _ span _a t u ->
-    App (Lam name (toTerm ctx top (name:loc) t)) (toTerm ctx top loc u)
+    App (Lam name (toTerm ctx top (name:loc) u)) (toTerm ctx top loc t)
       where
         name = span2Name ctx span
 
-  Syntax.T{} -> undefined
-  Syntax.F{} -> undefined
+  Syntax.T{} -> Bottom True
+  Syntax.F{} -> Bottom False
   Syntax.Zero{} -> undefined
   Syntax.Succ{} -> undefined
   Syntax.Pred{} -> undefined
@@ -123,6 +124,7 @@ data Val
   = VLam Name (Val -> Val)
   | VLoc Int  Spine
   | VTop Name Spine ~Val
+  | VBottom Bool
   deriving Show
 
 -- TODO: try a way to get rid of this.
@@ -144,11 +146,13 @@ eval top loc = \case
   Top n   -> evalTopEnv n top
   App t u -> vapp (eval top loc t) (eval top loc u)
   Lam n t -> VLam n \val -> eval top (val:loc) t
+  Bottom bool -> VBottom bool
 
 vapp :: Val -> Val -> Val
 vapp (VLam _n body)        ~arg = body arg
 vapp (VLoc lvl spine)      ~arg = VLoc lvl  (SApp spine arg)
 vapp (VTop name spine val) ~arg = VTop name (SApp spine arg) (vapp val arg)
+vapp (VBottom _)           _ = error "applied non function in vapp"
 
 evalWithTerm :: TopEnv -> Term -> Val
 evalWithTerm top tm = eval topvals [] tm where
