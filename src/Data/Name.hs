@@ -10,3 +10,8 @@ newtype Name = Name { unName :: B.ByteString }
 -- TODO: casting from Word64 to Int is ill-defined and not going to be bijective.
 instance Hashable Name where
   hashWithSalt _salt (Name str) = fromIntegral (fnv1a64 str)
+
+{- TODO / NOTE
+  - Find a way to hash name fast and statically known size so we can serialise it easily
+-}
+

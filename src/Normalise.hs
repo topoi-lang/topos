@@ -1,6 +1,6 @@
 {-# LANGUAGE Strict, BlockArguments #-}
 
-module Evaluate where
+module Normalise where
 
 {-
     Reduction of expressions
@@ -118,18 +118,12 @@ testTerm bs = case Lexer.runParser pSrc (_src ctx) of
 data Spine
   = SNil              -- empty spine for top level definitions
   | SApp Spine ~Val   -- stuck application
-  deriving Show
 
 data Val
   = VLam Name (Val -> Val)
   | VLoc Int  Spine
   | VTop Name Spine ~Val
   | VBottom Bool
-  deriving Show
-
--- TODO: try a way to get rid of this.
-instance Show (Val -> Val) where
-  show _ = "[ C L O S U R E ]"
 
 type VTopEnv = HashMap Name Val
 type VLocEnv = [Val] -- TODO: check whether this is needed or not
@@ -154,12 +148,35 @@ vapp (VLoc lvl spine)      ~arg = VLoc lvl  (SApp spine arg)
 vapp (VTop name spine val) ~arg = VTop name (SApp spine arg) (vapp val arg)
 vapp (VBottom _)           _ = error "applied non function in vapp"
 
-evalWithTerm :: TopEnv -> Term -> Val
-evalWithTerm top tm = eval topvals [] tm where
+evalWithTop :: TopEnv -> Term -> Val
+evalWithTop top tm = eval topvals [] tm where
   topvals = foldl
     (\topmap (name, term) -> insert name (eval topmap [] term) topmap)
     empty
     top
+
+quoteSpine :: Int -> Bool -> Term -> Spine -> Term
+quoteSpine depth unf tm = \case
+  SNil -> tm
+  SApp sp u -> App (quoteSpine depth unf tm sp) (quote depth unf u)
+
+-- Ah, so we need to "read back" term, because if we distinguish the term
+-- and value, we need to turn the value into term and do computation
+quote :: Int -> Bool -> Val -> Term
+quote depth unf = \case
+  VLoc i sp ->
+    quoteSpine depth unf (Local ((depth - i) - 1)) sp
+  VLam n body ->
+    let
+      depth' = depth + 1
+      varVal = VLoc depth SNil
+    in
+      Lam n (quote depth' unf (body varVal))
+  VTop x sp t -> if unf then quote depth unf t
+                        else quoteSpine depth unf (Top x) sp
+
+nfTop :: Bool -> TopEnv -> Term -> Term
+nfTop unf top t = quote 0 unf (evalWithTop top t)
 
 --- Test
 
@@ -178,4 +195,4 @@ predefinedTop =
          Lam (Name "n") . Lam (Name "s") . Lam (Name "z") $ s $$ nsz)
   ]
 
--- evalWithTerm predefinedTop (testTerm "succ zero")
+-- nfTop predefinedTop (testTerm "succ zero")
