@@ -25,10 +25,30 @@ data Type :: TypeKind -> * where
   TUnit :: Type a -- (), something like a base?
   TVar :: TVar -> Type a
   TExists :: TVar -> Type a
-  TForall :: TVar ->  Type Poly -> Type Poly
+  TForall :: TVar ->  Type 'Poly -> Type 'Poly -- why this promoted
   TFun :: Type a -> Type a -> Type a -- or type arrow ?
 deriving instance Show (Type a)
 deriving instance Eq (Type a)
+
+-- data Ty = IntTy | ArrTy Ty Ty
+
+-- data CheckedExpr :: Ty -> * where
+--   CEInt :: Int -> CheckedExpr 'IntTy
+--   CEApp :: CheckedExpr (ArrTy a b) -> CheckedExpr a -> CheckedExpr b
+
+-- data Expr = EInt Int | ELam String Expr | EApp Expr Expr
+
+-- typeof :: Expr -> Ty
+
+-- typeCheck :: Expr -> Env -> Either String CheckedExpr
+-- typeCheck (EInt n) _ = Right CEInt
+-- typeCheck (EApp a b) _ = case typeof a
+--   ArrTy a' b' -> Right $ CEApp 
+
+-- app :: Expr -> xx
+-- app (EAp f a) = case f of
+--   ELam s b ->
+--   _ -> throwError
 
 type Polytype = Type Poly
 type Monotype = Type Mono

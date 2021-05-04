@@ -1,6 +1,6 @@
 module Syntax where
 
-import FlatParse
+import FlatParse.Stateful (Pos, Span)
 
 -- TODO: subject to change
 data Type = TNat | TBool | TArrow Pos Type Type

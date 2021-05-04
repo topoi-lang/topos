@@ -37,11 +37,13 @@ module Normalise where
 
 import Prelude hiding (span, lookup)
 import qualified Data.ByteString as B
-import qualified Syntax
+import qualified Data.ByteString.Unsafe as B
+
+import qualified Data.SpannedTerm as Spanned
 import Data.Maybe
 import Data.Name
-import FlatParse (Span, Result(Err, OK))
-import qualified FlatParse as FP
+import FlatParse.Stateful (Result(Err, OK))
+import qualified FlatParse.Stateful as FP
 import Data.List (findIndex, elemIndex)
 import Data.HashMap.Strict (HashMap, insert, empty, lookup)
 import qualified Data.HashMap.Strict as HM
@@ -54,8 +56,15 @@ data Ctx = Ctx
   , _src      :: B.ByteString
   } deriving Show
 
-span2Name :: Ctx -> Span -> Name
-span2Name ctx s = Name $ FP.unsafeSpan2ByteString (_src ctx) s
+-- | Create a `ByteString` from a `Span`. The first argument is the buffer the
+--   `Span` points into.
+unsafeSpan2ByteString :: B.ByteString -> FP.Span -> B.ByteString
+unsafeSpan2ByteString bstr (FP.Span (FP.Pos n) (FP.Pos n')) =
+  B.unsafeTake (n - n') (B.unsafeDrop (B.length bstr - n) bstr)
+{-# INLINE unsafeSpan2ByteString #-}
+
+span2Name :: Ctx -> FP.Span -> Name
+span2Name ctx s = Name $ unsafeSpan2ByteString (_src ctx) s
 
 type TopEnv = [(Name, Term)]
 type LocEnv = [Name] -- doesn't need to shift `(name, 0): fmap (\(n, i) -> (n, i+1)) loc`
@@ -101,7 +110,7 @@ toTerm ctx top loc = \case
   Syntax.Pred{} -> undefined
   Syntax.IsZero{} -> undefined
 
-testTerm :: B.ByteString -> Term
+testTerm :: B.ByteString -> Unspanned.Tm
 testTerm bs = case Lexer.runParser pSrc (_src ctx) of
   OK ee _ _ -> toTerm ctx [] mempty ee
   _ -> error "some error"

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f67a4eef256e7adf4fd5274e8e962cdf29e0a83f0076ef43f28aa5af0fd8a6f1
+-- hash: 190ede1e65c8d963a1372b367db47e8f156a2b7f2af2eff78db62db06cfd2b76
 
 name:           topos
 version:        0.1.0.0
@@ -16,12 +16,12 @@ extra-source-files:
 library
   exposed-modules:
       BidirTypeCheck
+      Data.CopiedTerm
       Data.Error
+      Data.FNV1a
       Data.Name
-      FlatParse
-      Hasher
+      Data.SpannedTerm
       Lexer
-      Normalise
       Parser
       Syntax
   other-modules:
@@ -34,8 +34,8 @@ library
       base
     , bytestring
     , containers
+    , flatparse
     , hashable
-    , megaparsec
     , mtl
     , optparse-applicative
     , primitive
@@ -57,8 +57,8 @@ executable topos
       base
     , bytestring
     , containers
+    , flatparse
     , hashable
-    , megaparsec
     , mtl
     , optparse-applicative
     , primitive
@@ -87,8 +87,8 @@ test-suite general
     , bits
     , bytestring
     , containers
+    , flatparse
     , hashable
-    , megaparsec
     , mtl
     , optparse-applicative
     , primitive
