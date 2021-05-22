@@ -18,17 +18,17 @@ data LexerError
                              --   but parse something else.
   deriving Show
 
-type Parser = FP.Parser Int LexerError
+type Parser = FP.Parser LexerError
 
 merge :: LexerError -> LexerError -> LexerError
 merge e e' = case (lexerErrorPos e, lexerErrorPos e') of
   (p, p') | p < p' -> e'
   (p, p') | p > p' -> e
-  (p, p') -> case (e, e') of
+  (p, _') -> case (e, e') of
     (Precise{} , _) -> e
     (_, Precise{}) -> e'
     (Imprecise _ es, Imprecise _ es') -> Imprecise p (es ++ es')
-{-# NOINLINE merge #-} -- merge is "cold" code, so we shouldn't inlint it
+{-# NOINLINE merge #-} -- merge is "cold" code, so we shouldn't inline it
 
 lexerErrorPos :: LexerError -> Pos
 lexerErrorPos (Precise p _) = p
