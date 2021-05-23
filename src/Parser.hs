@@ -40,7 +40,7 @@ pAtomExpr :: Parser Spanned.Tm
 pAtomExpr = checkIndent >> token $(switch [|
   case _ of
     "_" -> pure Spanned.Hole
-    "(" -> ws *> pAtomExpr <* $(symbol ")")
+    "(" -> ws *> pAtomExpr <* $(symbol ")") `cutPrecise` Lit ")"
     _ -> Spanned.Var <$> pIdent
   |])
 

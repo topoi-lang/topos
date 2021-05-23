@@ -6,6 +6,8 @@ import qualified FlatParse.Stateful as FP
 import Language.Haskell.TH
 import qualified Data.ByteString as B
 
+import qualified Data.Set as S
+
 data Expected
   = Msg String -- ^ An error message
   | Lit String -- ^ Expected thing
@@ -17,6 +19,41 @@ data LexerError
   | Imprecise Pos [Expected] -- ^ An imprecise error, when we expect a number of different things,
                              --   but parse something else.
   deriving Show
+
+-- | Pretty print an error. The `B.ByteString` input is the source file. The offending line from the
+--   source is displayed in the output.
+prettyError :: B.ByteString -> LexerError -> String
+prettyError b e =
+
+  let pos :: Pos
+      pos      = case e of Imprecise pos e -> pos
+                           Precise pos e   -> pos
+      ls       = FP.lines b
+      [(l, c)] = posLineCols b [pos]
+      line     = if l < length ls then ls !! l else ""
+      linum    = show l
+      lpad     = map (const ' ') linum
+
+      expected (Lit s) = show s
+      expected (Msg s) = s
+
+      err (Precise _ e)    = expected e
+      err (Imprecise _ es) = imprec . S.toList $ S.fromList es
+
+      imprec :: [Expected] -> String
+      imprec []     = error "impossible"
+      imprec [e]    = expected e
+      imprec (e:es) = expected e ++ go es where
+        go []     = ""
+        go [e]    = " or " ++ expected e
+        go (e:es) = ", " ++ expected e ++ go es
+
+  in show l ++ ":" ++ show c ++ ":\n" ++
+     lpad   ++ "|\n" ++
+     linum  ++ "| " ++ line ++ "\n" ++
+     lpad   ++ "| " ++ replicate c ' ' ++ "^\n" ++
+     "parse error: expected " ++
+     err e
 
 type Parser = FP.Parser LexerError
 
@@ -47,11 +84,18 @@ cutPrecise p e = do
 runParser :: Parser a -> B.ByteString -> Result LexerError a
 runParser p = FP.runParser p 0 0
 
+-- | Run parser, print pretty error on failure.
+testParser :: Show a => Parser a -> B.ByteString -> IO ()
+testParser p str = case runParser p str of
+    Err e  -> putStrLn $ prettyError str e
+    OK a _ _ -> print a
+    Fail   -> putStrLn "uncaught parse error"
+
 lineComment :: Parser ()
 lineComment = 
   optioned anyWord8
-    (\case 10 -> ws -- don't worry, it is an ASCII '\n' char
-           _  -> lineComment)
+    (\case 10 -> (put 0 >> ws) -- don't worry, it is an ASCII '\n' char
+           _  -> (modify (+1) >> lineComment))
     (pure ())
 
 -- | Parse a potentially nested multiline comment.
@@ -59,19 +103,19 @@ multilineComment :: Parser ()
 multilineComment = go (1 :: Int) where
   go 0 = ws
   go n = $(switch [| case _ of
-    "-}" -> go (n - 1)
-    "{-" -> go (n + 1)
+    "-}" -> put 0 >> go (n - 1)
+    "{-" -> modify (+2) >> go (n + 1)
     _    -> branch anyWord8 (go n) (pure ()) |])
 
 -- | Consume whitespace.
 ws :: Parser ()
 ws = $(switch [| case _ of
-  " "  -> ws
-  "\n" -> ws
-  "\t" -> ws
-  "\r" -> ws
+  " "  -> modify (+1) >> ws
+  "\n" -> put 0 >> ws
+  "\t" -> modify (+1) >> ws
+  "\r" -> modify (+1) >> ws
   "--" -> lineComment
-  "{-" -> multilineComment
+  "{-" -> modify (+2) >> multilineComment
   _    -> pure () |])
 
 -- | Consume whitespace after running a parser.
