@@ -1,5 +1,6 @@
 
 use logos::Logos;
+use smol_str::SmolStr;
 
 #[derive(Logos, Debug, PartialEq)]
 pub enum Token {
@@ -26,6 +27,16 @@ pub enum Token {
     // Logos requires one token variant to handle errors,
     // it can be named anything you wish.
     #[error] Error,
+}
+
+struct Tokeniser {}
+
+impl Iterator for Tokeniser {
+    type Item = (Token, SmolStr);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some((Token::Newline, SmolStr::new("a")))
+    }
 }
 
 #[test]

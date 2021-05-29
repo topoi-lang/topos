@@ -1,7 +1,9 @@
 
 use rowan;
 
+pub mod tokeniser;
 mod kinds;
+
 pub use self::{
     kinds::SyntaxKind
 };

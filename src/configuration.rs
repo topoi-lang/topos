@@ -11,7 +11,7 @@ pub fn init_log() {
 }
 
 /// Used to calculate a execution time of a function
-pub fn timing<T>(body: impl FnOnce() -> T) -> (T, Duration) {
+pub fn _timing<T>(body: impl FnOnce() -> T) -> (T, Duration) {
     let start = Instant::now();
     let result = body();
     let end = Instant::now();

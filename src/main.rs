@@ -1,4 +1,3 @@
-mod tokeniser;
 mod configuration;
 mod parser;
 
