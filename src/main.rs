@@ -1,5 +1,6 @@
 mod tokeniser;
 mod configuration;
+mod parser;
 
 use log::{info};
 

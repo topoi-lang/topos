@@ -12,6 +12,9 @@ slotmap = "1.0"
 bumpalo = { version = "3.6", features = ["collections"] } 
 env_logger = "0.8"
 log = "0.4"
+salsa = "0.16" # incremental computing
+rowan = "0.12" # lossless syntax trees
+string-interner = "0.12"
 
 [dev-dependencies]
 criterion = "0.3"
