@@ -1,5 +1,7 @@
+//! The tokeniser turns a string into tokens
+//! 
 
-use logos::Logos;
+use logos::{ Logos, Lexer };
 use smol_str::SmolStr;
 
 #[derive(Logos, Debug, PartialEq)]
@@ -29,13 +31,47 @@ pub enum Token {
     #[error] Error,
 }
 
-struct Tokeniser {}
+pub struct Tokeniser<'source> {
+    lexer: Lexer<'source, Token>,
+}
 
-impl Iterator for Tokeniser {
-    type Item = (Token, SmolStr);
+impl<'source> Tokeniser<'source> {
+    pub fn new(input: &'source str) -> Self {
+        Self { lexer: Token::lexer(input) }
+    }
 
+    /// Source from which this Lexer is reading tokens, such as input string
+    pub fn source(&self) -> &'source str {
+        self.lexer.source()
+    }
+
+    fn need_capture(token: &Token) -> bool {
+        match token {
+            Token::Ident => true,
+            Token::Integer => true,
+            Token::Float => true,
+            Token::String => true,
+            _ => false,
+        }
+    }
+}
+
+impl Iterator for Tokeniser<'_> {
+    type Item = (Token, Option<SmolStr>);
+
+    // Allocate the lexer text slice into stack allocate string
     fn next(&mut self) -> Option<Self::Item> {
-        Some((Token::Newline, SmolStr::new("a")))
+        let lex = self.lexer.next();
+        match lex {
+            None => None,
+            Some(tok) => {
+                if Tokeniser::need_capture(&tok) {
+                    Some((tok, Some(self.lexer.slice().into())))
+                } else {
+                    Some((tok, None))
+                }
+            }
+        }
     }
 }
 
@@ -64,4 +100,21 @@ pub fn tokenizer_whitespace_groupping() {
 
     let a : Vec<_> = lex.spanned().collect();
     assert_eq!(a, vec![(Whitespace, 0..4)]);
+}
+
+#[test]
+pub fn tokeniser_iterator_smolstring() {
+    use Token::*;
+    use self::*;
+    let a : Vec<(Token, Option<SmolStr>)> = Tokeniser::new("cond  fn closure wow").collect();
+
+    assert_eq!(a, vec![
+        (Cond, None),
+        (Whitespace, None),
+        (Func, None),
+        (Whitespace, None),
+        (Ident, Some("closure".into())),
+        (Whitespace, None),
+        (Ident, Some("wow".into())),
+    ])
 }

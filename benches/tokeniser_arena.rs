@@ -3,7 +3,7 @@ use std::ops::Range;
 
 use logos::Logos;
 
-use topos::tokenising::Token;
+use topos::parser::tokeniser::{ Token, Tokeniser };
 use bumpalo::{Bump, collections};
 
 pub fn normal_vec_collect() -> Vec<(Token, Range<usize>)> {
@@ -22,9 +22,20 @@ pub fn bumpalo_vec_collect() {
     }
 }
 
+pub fn bumpalo_smolstr_collect() {
+    let input = "cond fn closure wow";
+
+    let bump = Bump::new();
+    let mut v = collections::Vec::new_in(&bump);
+    for x in Tokeniser::new(input).into_iter() {
+        v.push(x)
+    }
+}
+
 pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("normal vec collect", |b| b.iter(|| normal_vec_collect()));
     c.bench_function("bumpalo vec collect", |b| b.iter(|| bumpalo_vec_collect()));
+    c.bench_function("bumpalo smolstr collect", |b| b.iter(|| bumpalo_smolstr_collect()));
 }
 
 criterion_group!(benches, criterion_benchmark);
