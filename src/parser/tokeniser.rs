@@ -4,7 +4,8 @@
 use logos::{ Logos, Lexer };
 use smol_str::SmolStr;
 
-#[derive(Logos, Debug, PartialEq)]
+#[repr(u16)] // size_of::<Token>() == 2
+#[derive(Logos, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Token {
     #[token("cond")] Cond,
     #[token("fn")] Func,
@@ -29,6 +30,9 @@ pub enum Token {
     // Logos requires one token variant to handle errors,
     // it can be named anything you wish.
     #[error] Error,
+
+    #[doc(hidden)]
+    __LAST, // last value of the enum, requires Ord trait
 }
 
 pub struct Tokeniser<'source> {
@@ -59,7 +63,8 @@ impl<'source> Tokeniser<'source> {
 impl Iterator for Tokeniser<'_> {
     type Item = (Token, Option<SmolStr>);
 
-    // Allocate the lexer text slice into stack allocate string
+    // Allocate the lexer text slice into stack allocate string only when it
+    // needs to be captured.
     fn next(&mut self) -> Option<Self::Item> {
         let lex = self.lexer.next();
         match lex {
