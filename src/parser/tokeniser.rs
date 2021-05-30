@@ -91,7 +91,6 @@ impl Iterator for Tokeniser<'_> {
 
 #[test]
 pub fn tokenizer_failparse() {
-    use Token::*;
     let mut lex = Token::lexer("1.2.3");
 
     lex.next();
@@ -101,7 +100,7 @@ pub fn tokenizer_failparse() {
 #[test]
 pub fn tokenizer_whitespace_groupping() {
     use Token::*;
-    let mut lex = Token::lexer("    ");
+    let lex = Token::lexer("    ");
 
     let a : Vec<_> = lex.spanned().collect();
     assert_eq!(a, vec![(Whitespace, 0..4)]);

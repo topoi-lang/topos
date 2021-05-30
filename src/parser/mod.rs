@@ -2,6 +2,7 @@
 pub mod tokeniser;
 mod syntax;
 mod structure;
+mod value;
 
 use tokeniser::Token;
 
