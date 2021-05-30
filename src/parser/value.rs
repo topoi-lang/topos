@@ -3,11 +3,14 @@
 
 use std::fmt;
 use super::tokeniser::Token;
+use smol_str::SmolStr;
 
+#[derive(Debug, PartialEq)]
 pub enum Value {
     Float(f64),
     Integer(i64),
     String(String),
+    Ident(SmolStr),
 }
 
 impl From<i64> for Value {
@@ -22,7 +25,7 @@ impl From<f64> for Value {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ValueError {
     Float(std::num::ParseFloatError),
     Integer(std::num::ParseIntError),
@@ -63,13 +66,23 @@ impl std::error::Error for ValueError {
 impl Value {
     // ~~Maybe I can use SIMD parsing here? https://kholdstare.github.io/technical/2020/05/26/faster-integer-parsing.html ~~
     // Now the results are similar as the blog stated. So we can use parse at ease.
-    pub fn from_token(token: Token, s: &str) -> Result<Self, ValueError> {
+    pub fn from_token(token: Token, s: SmolStr) -> Result<Self, ValueError> {
         let value = match token {
             Token::Float => Value::Float(s.parse()?),
-            Token::Ident => Value::Integer(s.parse()?),
+            Token::Integer => Value::Integer(s.parse()?),
             Token::String => Value::String(String::from(s)),
+            Token::Ident => Value::Ident(s),
             _ => return Err(ValueError::Unknown),
         };
         Ok(value)
     }
+}
+
+#[test]
+pub fn parse_atomic_values() {
+    use Token::*;
+    assert_eq!(Ok(Value::Ident("closure".into())), Value::from_token(Ident, "closure".into()));
+    assert_eq!(Ok(Value::String(std::string::String::from("closure"))), Value::from_token(String, "closure".into()));
+    assert_eq!(Ok(Value::Float(100.001)), Value::from_token(Float, "100.001".into()));
+    assert_eq!(Ok(Value::Integer(100)), Value::from_token(Integer, "100".into()));
 }
