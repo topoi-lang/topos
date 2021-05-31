@@ -1,7 +1,8 @@
 
 pub mod tokeniser;
 mod syntax;
-mod structure;
+mod kinds;
+// mod structure;
 mod value;
 
 use tokeniser::Token;

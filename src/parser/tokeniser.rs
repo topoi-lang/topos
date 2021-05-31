@@ -9,6 +9,8 @@ use smol_str::SmolStr;
 pub enum Token {
     #[token("cond")] Cond,
     #[token("fn")] Func,
+    #[token("let")] Let,
+    #[token("in")] In,
 
     // These tokens need to use slice() to get the information
     #[regex("[a-zA-Z_$][a-zA-Z0-9_$]*")] Ident,
@@ -30,9 +32,6 @@ pub enum Token {
     // Logos requires one token variant to handle errors,
     // it can be named anything you wish.
     #[error] Error,
-
-    #[doc(hidden)]
-    __LAST, // last value of the enum, requires Ord trait
 }
 
 pub struct Tokeniser<'source> {

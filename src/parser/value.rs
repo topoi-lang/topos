@@ -1,5 +1,6 @@
 //! From the result of the Tokeniser (Token, Option<SmolStr>),
 //! pattern match the Token and parse to Value.
+//! It is more likely atomic values.
 
 use std::fmt;
 use super::tokeniser::Token;

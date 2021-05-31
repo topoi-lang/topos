@@ -8,6 +8,30 @@ use super::{
     SyntaxNode, SyntaxToken, SyntaxElement
 };
 
+macro_rules! structured {
+    ($($kind:expr => $name:ident$(: $trait:ident)*$(: { $($block:tt)* })*),*) => {
+        $(
+            #[derive(Clone, Debug)]
+            pub struct $name(SyntaxNode);
+
+            impl TypedNode for $name {
+                fn cast(from: SyntaxNode) -> Option<Self> {
+                    if from.kind() == $kind {
+                        Some(Self(from))
+                    } else {
+                        None
+                    }
+                }
+                fn node(&self) -> &SyntaxNode {
+                    &self.0
+                }
+            }
+            $(impl $trait for $name {})*
+            $(impl $name { $($block)* })*
+        )*
+    }
+}
+
 pub enum ParseError {
     Unexpected(TextRange),
     UnexpectedEOF,
@@ -17,19 +41,9 @@ pub enum ParseError {
 // impl std::error::Error for ParseError {}
 
 pub struct AST {
+    /// It is equivalent to Roslyn's Red-Green Syntax node,
+    /// this is an immutable tree, which is cheap to change
+    /// but doesn't contain offsets and parent pointers, we store parse results here
     node: GreenNode,
     errors: Vec<ParseError>,
-}
-
-impl AST {
-    /// Return the root node
-    pub fn node(&self) -> SyntaxNode {
-        SyntaxNode::new_root(self.node.clone())
-    }
-
-    // Return a borrowed typed root node
-    //pub fn root(&self) -> Root {
-    //    Root::cast(self.node()).unwrap()
-    //}
-
 }
