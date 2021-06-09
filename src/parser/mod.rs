@@ -1,3 +1,5 @@
+#[macro_use]
+mod macros;
 
 pub mod tokeniser;
 mod syntax;

@@ -35,4 +35,13 @@ impl SyntaxKind {
             _ => false,
         }
     }
+
+    pub fn is_skippable(self) -> bool {
+        match self {
+            TOKEN_COMMENT => true,
+            TOKEN_ERROR => true,
+            TOKEN_WHITESPACE => true,
+            _ => false,
+        }
+    }
 }
