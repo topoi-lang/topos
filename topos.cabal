@@ -1,101 +1,25 @@
-cabal-version: 1.12
+cabal-version: 2.4
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
---
--- see: https://github.com/sol/hpack
---
--- hash: 190ede1e65c8d963a1372b367db47e8f156a2b7f2af2eff78db62db06cfd2b76
+name: topos
+version: 0.0.3
+license: BSD-3-Clause
 
-name:           topos
-version:        0.1.0.0
-license:        BSD3
-build-type:     Simple
-extra-source-files:
-    README.md
+common haskell
+  default-language: Haskell2010
+  default-extensions: StrictData
+  ghc-options:
+    -Wall
+    -Wname-shadowing
 
 library
-  exposed-modules:
-      BidirTypeCheck
-      Data.CopiedTerm
-      Data.Error
-      Data.FNV1a
-      Data.Name
-      Data.SpannedTerm
-      Lexer
-      Parser
-      Syntax
-  other-modules:
-      Paths_topos
-  hs-source-dirs:
-      src
-  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DerivingVia DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification ExplicitNamespaces FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MagicHash MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeFamilies TypeSynonymInstances UnboxedTuples ViewPatterns
-  ghc-options: -Wall
+  import: haskell
+  hs-source-dirs: src
+  exposed-modules: Tokeniser
+  other-modules: Paths_topos
   build-depends:
-      base
-    , bytestring
-    , containers
-    , flatparse
-    , hashable
-    , mtl
-    , optparse-applicative
-    , primitive
-    , template-haskell
-    , text
-    , unordered-containers
-    , utf8-string
-  default-language: Haskell2010
-
-executable topos
-  main-is: Main.hs
-  other-modules:
-      Paths_topos
-  hs-source-dirs:
-      app
-  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DerivingVia DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification ExplicitNamespaces FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MagicHash MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeFamilies TypeSynonymInstances UnboxedTuples ViewPatterns
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -fllvm
-  build-depends:
-      base
-    , bytestring
-    , containers
-    , flatparse
-    , hashable
-    , mtl
-    , optparse-applicative
-    , primitive
-    , template-haskell
-    , text
-    , topos
-    , unordered-containers
-    , utf8-string
-  default-language: Haskell2010
-
-test-suite general
-  type: exitcode-stdio-1.0
-  main-is: Spec.hs
-  other-modules:
-      Test.Int2Word64IsBijectiveSpec
-      Paths_topos
-  hs-source-dirs:
-      test
-  default-extensions: BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveAnyClass DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DerivingStrategies DerivingVia DeriveTraversable DoAndIfThenElse EmptyDataDecls ExistentialQuantification ExplicitNamespaces FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MagicHash MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PatternSynonyms PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeFamilies TypeSynonymInstances UnboxedTuples ViewPatterns
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
-  build-tool-depends:
-      sydtest-discover:sydtest-discover
-  build-depends:
-      QuickCheck
     , base
-    , bits
-    , bytestring
-    , containers
-    , flatparse
-    , hashable
-    , mtl
-    , optparse-applicative
-    , primitive
-    , sydtest
-    , sydtest-discover
-    , template-haskell
-    , text
-    , unordered-containers
-    , utf8-string
-  default-language: Haskell2010
+    , Z-Data
+
+source-repository head
+  type: git
+  location: https://github.com/topoi-lang/topos
