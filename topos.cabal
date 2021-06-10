@@ -15,6 +15,7 @@ library
   import: haskell
   hs-source-dirs: src
   exposed-modules: Tokeniser
+                 , Parser
   other-modules: Paths_topos
   build-depends:
     , base
