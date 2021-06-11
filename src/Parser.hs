@@ -44,18 +44,15 @@ processAtom :: Scope -> Atom -> Either ParseError Expr
 processAtom _s int@Int{}    = Right (Lit int)
 processAtom _s str@String{} = Right (Lit str)
 processAtom _s Nil          = Right (Lit Nil)
-processAtom s ident@(Ident str) = case M.lookup str s of
-    Just value -> Right value
+processAtom s ident@(Ident name) = case M.lookup name s of
+    Just expr -> Right expr
     Nothing -> Left (UnknownIdentifier ident)
 
 -- | Make nested list become canonical, say, it maps `List [List [Atom Nil]]` to `Atom Nil`
 flattenTermList :: Term -> Term
 flattenTermList a@Atom{} = a
-flattenTermList (List []) = Atom Nil -- this is unreachable because tokeniser already deal with this
-flattenTermList (List terms@(term:rest)) = case length terms of
-    0 -> Atom Nil -- also unreachable
-    1 -> flattenTermList term
-    _ -> List $ term : (flattenTermList <$> rest) -- Resemble to the Applicative?
+flattenTermList (List []) = Atom Nil
+flattenTermList (List term:rest) = List $ (flattenTermList term) : (flattenTermList <$> rest)
 
 defaultScope :: FlatMap k v
 defaultScope = M.empty
