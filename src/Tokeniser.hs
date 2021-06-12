@@ -5,7 +5,7 @@
 {-# language OverloadedStrings #-}
 
 module Tokeniser (
-    sexp, Atom(..), Term(..)
+    sexp, Atom(..), AbstSynTree(..)
 ) where
 
 import Data.Functor (($>))
@@ -27,9 +27,9 @@ data Atom
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass Print
 
-data Term
+data AbstSynTree
     = Atom    Atom
-    | List    [Term]
+    | List    [AbstSynTree]
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass Print
 
@@ -46,10 +46,10 @@ ws w = w == TAB || w == SPACE || w == NEWLINE || w == CARRIAGE_RETURN
 {-# inline ws #-}
 
 -- | parse S expression with leading left parenthesis
-sexp :: P.Parser Term
-sexp = P.word8 PAREN_LEFT *> sexp_
-    
-sexp_ :: P.Parser Term
+sexp :: P.Parser AbstSynTree
+sexp = fmap flattenAST $ P.word8 PAREN_LEFT *> sexp_
+
+sexp_ :: P.Parser AbstSynTree
 sexp_ = do
     skipSpaces
     w <- P.peek
@@ -57,7 +57,7 @@ sexp_ = do
         then P.skipWord8 $> Atom Nil
         else List <$> loop []
   where
-    loop :: [Term] -> P.Parser [Term]
+    loop :: [AbstSynTree] -> P.Parser [AbstSynTree]
     loop acc = do
         !a <- atom
         let acc' = a:acc
@@ -71,7 +71,7 @@ sexp_ = do
                     then pure $! reverse acc' -- it is also PAREN_RIGHT
                     else loop acc'
 
-atom :: P.Parser Term
+atom :: P.Parser AbstSynTree
 atom = do
     skipSpaces
     w <- P.peek
@@ -84,3 +84,10 @@ atom = do
 
 identifier :: P.Parser Text
 identifier = T.Text <$> P.takeWhile1 (\w -> isLower w || isUpper w)
+
+-- | Make nested list become canonical, say, it maps `List [List [Atom Nil]]` to `Atom Nil`
+flattenAST :: AbstSynTree -> AbstSynTree
+flattenAST a@Atom{} = a
+flattenAST (List []) = Atom Nil
+flattenAST (List [term]) = flattenAST term
+flattenAST (List (term:rest)) = List $ flattenAST term : (flattenAST <$> rest)
