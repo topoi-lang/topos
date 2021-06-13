@@ -21,6 +21,22 @@ import Tokeniser
 type Name = Text
 type Scope = FlatMap Name Expr
 
+{-
+
+(define x expression)
+(defun name arg expression)
+
+(enum name (identifier))
+    eg:
+    (enum BOOL (true false))
+
+(x) is equivalent to x, vice versa
+therefore...
+    (define x (23)) is equivalant to (define x 23)
+    (defun name x (+ x 1)) is equivalent to (defun name (x) (+ x 1))
+    (define plusOne (lambda x x + 1)) is equivalent to (defun plusOne x (+ x 1))
+
+-}
 data Declaration
     = VarDecl Name Expr
     | FunDecl Name   -- ^ function name
@@ -29,6 +45,41 @@ data Declaration
     | EnumDecl Name [Expr] 
     deriving (Eq, Show, Generic)
 
+{-
+
+literal will be parsed as Lit.
+    (1) will be pased as (Lit (Num 1))
+    ("abc") will be parsed as (Lit (Str "abc"))
+    () will be just Bottom
+
+
+identifier will be parsed as Var.
+    (someFunc) will be parsed as (Var "someFunc")
+
+
+(fn arg) will be parsed as (App fn arg)
+(fn a1 a2) will be parsed as (App (App fn a1) a2)
+
+(lambda name expression) will be parsed as (Lam name expression)
+
+
+
+for example:
+    (define plusOne (lambda "x" (+ x 1)))
+
+(+ x 1) will be parsed as
+    (App (App "+"" (Var "x")) (Lit (Num 1)))
+
+(lambda "x" expression) will be parsed as
+    (Lam "x" expression)
+
+together will be
+    (Lam "x" (App (App "+"" (Var "x")) (Lit (Num 1))))
+
+and (define x (lambda arg expr)) is equivalent to (defun x arg expr), therefore it becomes
+    (FunDecl "plusOne" "x" (Lam "x" (App (App "+"" (Var "x")) (Lit (Num 1)))))
+
+-}
 data Expr
     = Var Name
     | App Expr Expr
@@ -56,7 +107,7 @@ emptyProgram :: Program
 emptyProgram = Program [] [] M.empty
 
 (<+>) :: [a] -> a -> [a]
-xs <+> x = concat [xs, x]
+xs <+> x = reverse (x:xs)
 {-# inline (<+>) #-}
 
 parse :: Program -> AbstSynTree -> Either ParseError Program
@@ -93,6 +144,9 @@ processAtom Nil          = Bottom
 processList :: [AbstSynTree] -> Expr
 processList [] = undefined -- unreachable
 processList (x:xs) = case x of
+    Atom (Ident "define") -> undefined
+    Atom (Ident "defun")  -> undefined
+    Atom (Ident "enum")   -> undefined
     Atom a -> processAtom a
     List xs' -> App (processList xs') (processList xs)
 
