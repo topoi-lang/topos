@@ -92,6 +92,22 @@ data Literal = Num Integer | Str Text
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass Print
 
+{-
+
+name = letter | symbol
+string_literal = '"', { letter | digit }, '"'
+expression = "(", { atom }, ")"
+
+atom = name | symbol | declarations | application
+
+declarations = defineDecl | defunDecl | enumDecl
+defineDecl = "define", { name }, { expression }
+defunDecl = "defun", { name }, "(", { name+ }, ")", { expression }
+enumDecl = "enum", { name }, "(", {name+}, ")"
+
+application = { name+ }
+
+-}
 data Program =
     Program
         [Declaration] -- constant and variable declaration
