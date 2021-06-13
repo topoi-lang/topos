@@ -6,11 +6,9 @@
 
 module Parser where
 
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Par1)
 import Z.Data.Text (Text, Print)
-import Z.Data.Vector.FlatMap (FlatMap)
 
-import qualified Z.Data.Vector.FlatMap as M
 import qualified Z.Data.Builder as B
 
 import Tokeniser
@@ -19,7 +17,6 @@ import Tokeniser
     )
 
 type Name = Text
-type Scope = FlatMap Name Expr
 
 {-
 
@@ -108,47 +105,19 @@ enumDecl = "enum", { name }, "(", {name+}, ")"
 application = { name+ }
 
 -}
-data Program =
-    Program
-        [Declaration] -- constant and variable declaration
-        [Expr]        -- Body
+data Program = Program
+    { declarations :: [Declaration] -- constant and variable declaration
+    , exprs        :: [Expr]        -- Body
+    }
+    deriving (Show)
 
 data ParseError
     = DefineUnmetArity
     | DefunUnmetArity
     | LambdaUnmetArity
+    | NotValidName
+    | NotValidArg
     deriving (Show)
-
-emptyProgram :: Program
-emptyProgram = Program [] [] M.empty
-
-(<+>) :: [a] -> a -> [a]
-xs <+> x = reverse (x:xs)
-{-# inline (<+>) #-}
-
-parse :: Program -> AbstSynTree -> Either ParseError Program
-parse (Program decls exprs) (Atom atom) = case atom of
-    Ident  str -> Right $ Program decls (exprs <+> Var str)
-    Int    int -> Right $ Program decls (exprs <+> Lit (Num int))
-    String str -> Right $ Program decls (exprs <+> Lit (Str str))
-    Nil        -> Right $ Program decls exprs
-
-parse prog (List (first:rest)) = case first of
-    Atom (Ident "define")
-        | [name, e] <- rest -> processDefine prog
-        | otherwise -> Left DefineUnmetArity
-    
-    Atom (Ident "lambda")
-        | [args, e] <- rest -> processLambda prog
-        | otherwise  -> Left LambdaUnmetArity
-    
-    Atom (Ident "defun")
-        | [name, args, e] <- rest -> processFunction prog
-        | otherwise  -> Left DefunUnmetArity
-    
-    Atom atom | rest /= [] -> undefined
-
-parse _prog (List []) = undefined -- unreachable
 
 processAtom :: Atom -> Expr
 processAtom (Ident name) = Var name
@@ -156,41 +125,55 @@ processAtom (Int int)    = Lit (Num int)
 processAtom (String str) = Lit (Str str)
 processAtom Nil          = Bottom
 
+isDeclarationKeyword :: Atom -> Bool
+isDeclarationKeyword = \case
+    (Ident "define") -> True
+    (Ident "lambda") -> True
+    (Ident "defun")  -> True
+    (Ident "enum")   -> True
+    _                -> False
+
 -- it works
-processList :: [AbstSynTree] -> Expr
-processList [] = undefined -- unreachable
-processList (x:xs) = case x of
-    Atom (Ident "define") -> undefined
-    Atom (Ident "defun")  -> undefined
-    Atom (Ident "enum")   -> undefined
-    Atom a -> processAtom a
-    List xs' -> App (processList xs') (processList xs)
+processExpr :: AbstSynTree -> Expr
+processExpr (Atom a) = if isDeclarationKeyword a then Bottom else processAtom a
+processExpr (List []) = undefined -- unreachable
+processExpr (List (x:xs)) = foldr App (processExpr x) (processExpr <$> xs)
 
-{-
-processDefine :: Program -> Name -> AbstSynTree -> Program
-processDefine (Program decls exprs) name (Atom a) = Program (decls <+> VarDecl name (processAtom a)) exprs
-processDefine (Program decls exprs) name (List xs) = Program (decls ++ fmap processDefine xs) exprs
--}
+checkName :: AbstSynTree -> Either ParseError Name
+checkName (Atom (Ident n)) = Right n
+checkName _ = Left NotValidName
 
--- processDefine = undefined
-processLambda = undefined
-processFunction = undefined
-{-
-parse (first:rest) = case first of
+checkArgs :: AbstSynTree -> Either ParseError [Name]
+checkArgs (Atom (Ident n)) = Right [n]
+checkArgs (List xs) = fmap concat $ mapM checkArgs xs
+checkArgs _ = Left NotValidArg
 
+processStatement :: [Declaration] -> [AbstSynTree] -> Either ParseError [Declaration]
+processStatement decls [] = Right decls
+processStatement decls (first:rest) = case first of
     Atom (Ident "define")
-        | [name, e] <- rest -> undefined
+        | [name, e] <- rest -> do
+            n <- checkName name
+            Right $ VarDecl n (processExpr e) : decls
         | otherwise -> Left DefineUnmetArity
 
     Atom (Ident "lambda")
-        | [args, e ] <- rest -> undefined
+        | [args, e] <- rest -> do
+            a <- checkArgs args
+            Right $ FunDecl "" a (processExpr e):decls
         | otherwise -> Left LambdaUnmetArity
 
     Atom (Ident "defun")
-        | [name, args, e] <- rest -> undefined
+        | [name, args, e] <- rest -> do
+            n <- checkName name
+            a <- checkArgs args
+            Right $ FunDecl n a (processExpr e):decls
         | otherwise -> Left DefunUnmetArity
 
-    Atom (Ident "do") -> undefined -- use rest
+    _ -> Right []
 
-    _ -> undefined
--}
+parse :: [AbstSynTree] -> Either ParseError Program
+parse trees = do
+    decls <- processStatement [] trees
+    let exprs' = processExpr <$> trees
+    Right $ Program decls exprs'
