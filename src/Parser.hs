@@ -6,17 +6,13 @@
 
 module Parser where
 
-import GHC.Generics (Generic, Par1)
+import GHC.Generics (Generic)
 import Z.Data.Text (Text, Print)
-
-import qualified Z.Data.Builder as B
 
 import Tokeniser
     ( Atom (Ident, Int, String, Nil)
     , AbstSynTree (Atom, List)
     )
-
-type Name = Text
 
 {-
 
@@ -33,16 +29,6 @@ therefore...
     (defun name x (+ x 1)) is equivalent to (defun name (x) (+ x 1))
     (define plusOne (lambda x x + 1)) is equivalent to (defun plusOne x (+ x 1))
 
--}
-data Declaration
-    = VarDecl Name Expr
-    | FunDecl Name   -- ^ function name
-              [Name] -- ^ arguments
-              Expr   -- ^ function body
-    | EnumDecl Name [Expr] 
-    deriving (Eq, Show, Generic)
-
-{-
 
 literal will be parsed as Lit.
     (1) will be pased as (Lit (Num 1))
@@ -76,20 +62,6 @@ together will be
 and (define x (lambda arg expr)) is equivalent to (defun x arg expr), therefore it becomes
     (FunDecl "plusOne" "x" (Lam "x" (App (App "+"" (Var "x")) (Lit (Num 1)))))
 
--}
-data Expr
-    = Var Name
-    | App Expr Expr
-    | Lam Name Expr
-    | Lit Literal
-    | Bottom -- ?
-    deriving (Eq, Show, Generic)
-
-data Literal = Num Integer | Str Text
-    deriving (Eq, Ord, Show, Generic)
-    deriving anyclass Print
-
-{-
 
 name = letter | symbol
 string_literal = '"', { letter | digit }, '"'
@@ -105,11 +77,24 @@ enumDecl = "enum", { name }, "(", {name+}, ")"
 application = { name+ }
 
 -}
-data Program = Program
-    { declarations :: [Declaration] -- constant and variable declaration
-    , exprs        :: [Expr]        -- Body
-    }
-    deriving (Show)
+
+data Literal = Num Integer | Str Text | Unit
+    deriving (Eq, Ord, Show, Generic)
+    deriving anyclass Print
+
+newtype Program = Program [WeakTerm] deriving (Show)
+
+type Name = Text
+
+data WeakTerm
+    = WeakTermVar Name
+    | WeakTermApp WeakTerm WeakTerm
+    | WeakTermLam Name WeakTerm
+    | WeakTermLit Literal
+    | WeakTermVarDecl Name WeakTerm
+    | WeakTermFunDecl Name [Name] WeakTerm
+    | WeakTermEnumDecl Name [WeakTerm]
+    deriving Show
 
 data ParseError
     = DefineUnmetArity
@@ -117,27 +102,35 @@ data ParseError
     | LambdaUnmetArity
     | NotValidName
     | NotValidArg
+    | InvalidToken
     deriving (Show)
 
-processAtom :: Atom -> Expr
-processAtom (Ident name) = Var name
-processAtom (Int int)    = Lit (Num int)
-processAtom (String str) = Lit (Str str)
-processAtom Nil          = Bottom
+parse' :: AbstSynTree -> Either ParseError WeakTerm
+parse' (Atom a) = Right (processAtom a)
+parse' (List as) = processList as
 
-isDeclarationKeyword :: Atom -> Bool
-isDeclarationKeyword = \case
-    (Ident "define") -> True
-    (Ident "lambda") -> True
-    (Ident "defun")  -> True
-    (Ident "enum")   -> True
-    _                -> False
+processAtom :: Atom -> WeakTerm
+processAtom (Ident name) = WeakTermVar name
+processAtom (Int int)    = WeakTermLit (Num int)
+processAtom (String str) = WeakTermLit (Str str)
+processAtom Nil          = WeakTermLit Unit
 
--- it works
-processExpr :: AbstSynTree -> Expr
-processExpr (Atom a) = if isDeclarationKeyword a then Bottom else processAtom a
-processExpr (List []) = undefined -- unreachable
-processExpr (List (x:xs)) = foldr App (processExpr x) (processExpr <$> xs)
+processList :: [AbstSynTree] -> Either ParseError WeakTerm
+processList [] = Right (WeakTermLit Unit)
+processList (a:as) = if isKeyword a
+    then processStatement (a:as)
+    else do
+        a' <- parse' a
+        as' <- mapM parse' as
+        Right $ foldr WeakTermApp a' as'
+
+isKeyword :: AbstSynTree -> Bool
+isKeyword = \case
+    Atom (Ident "define") -> True
+    Atom (Ident "lambda") -> True
+    Atom (Ident "defun")  -> True
+    Atom (Ident "enum")   -> True
+    _                     -> False
 
 checkName :: AbstSynTree -> Either ParseError Name
 checkName (Atom (Ident n)) = Right n
@@ -148,32 +141,27 @@ checkArgs (Atom (Ident n)) = Right [n]
 checkArgs (List xs) = fmap concat $ mapM checkArgs xs
 checkArgs _ = Left NotValidArg
 
-processStatement :: [Declaration] -> [AbstSynTree] -> Either ParseError [Declaration]
-processStatement decls [] = Right decls
-processStatement decls (first:rest) = case first of
+processStatement :: [AbstSynTree] -> Either ParseError WeakTerm
+processStatement [] = Left InvalidToken
+processStatement (first:rest) = case first of
     Atom (Ident "define")
-        | [name, e] <- rest -> do
-            n <- checkName name
-            Right $ VarDecl n (processExpr e) : decls
+        | [n, e] <- rest -> do
+            name <- checkName n
+            expr <- parse' e
+            Right $ WeakTermVarDecl name expr
         | otherwise -> Left DefineUnmetArity
 
     Atom (Ident "lambda")
-        | [args, e] <- rest -> do
-            a <- checkArgs args
-            Right $ FunDecl "" a (processExpr e):decls
-        | otherwise -> Left LambdaUnmetArity
+        | [a, e] <- rest -> do
+            args <- checkArgs a
+            expr <- parse' e
+            Right $ WeakTermFunDecl "" args expr
 
     Atom (Ident "defun")
-        | [name, args, e] <- rest -> do
-            n <- checkName name
-            a <- checkArgs args
-            Right $ FunDecl n a (processExpr e):decls
-        | otherwise -> Left DefunUnmetArity
+        | [n, a, e] <- rest -> do
+            name <- checkName n
+            args <- checkArgs a
+            expr <- parse' e
+            Right $ WeakTermFunDecl name args expr
 
-    _ -> Right []
-
-parse :: [AbstSynTree] -> Either ParseError Program
-parse trees = do
-    decls <- processStatement [] trees
-    let exprs' = processExpr <$> trees
-    Right $ Program decls exprs'
+    _ -> Left InvalidToken
