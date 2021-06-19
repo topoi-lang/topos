@@ -119,10 +119,7 @@ processList :: [AbstSynTree] -> Either ParseError WeakTerm
 processList [] = Right (WeakTermLit Unit)
 processList (a:as) = if isKeyword a
     then processStatement (a:as)
-    else do
-        a' <- parse' a
-        as' <- mapM parse' as
-        Right $ foldr WeakTermApp a' as'
+    else foldr WeakTermApp <$> parse' a <*> mapM parse' as
 
 isKeyword :: AbstSynTree -> Bool
 isKeyword = \case
@@ -145,23 +142,18 @@ processStatement :: [AbstSynTree] -> Either ParseError WeakTerm
 processStatement [] = Left InvalidToken
 processStatement (first:rest) = case first of
     Atom (Ident "define")
-        | [n, e] <- rest -> do
-            name <- checkName n
-            expr <- parse' e
-            Right $ WeakTermVarDecl name expr
+        | [name, expr] <- rest ->
+            WeakTermVarDecl <$> checkName name <*> parse' expr
         | otherwise -> Left DefineUnmetArity
 
     Atom (Ident "lambda")
-        | [a, e] <- rest -> do
-            args <- checkArgs a
-            expr <- parse' e
-            Right $ WeakTermFunDecl "" args expr
+        | [args, expr] <- rest ->
+            WeakTermFunDecl "" <$> checkArgs args <*> parse' expr
+        | otherwise -> Left LambdaUnmetArity
 
     Atom (Ident "defun")
-        | [n, a, e] <- rest -> do
-            name <- checkName n
-            args <- checkArgs a
-            expr <- parse' e
-            Right $ WeakTermFunDecl name args expr
+        | [name, args, expr] <- rest -> do
+            WeakTermFunDecl <$> checkName name <*> checkArgs args <*> parse' expr
+        | otherwise -> Left DefunUnmetArity
 
     _ -> Left InvalidToken
