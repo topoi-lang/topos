@@ -119,7 +119,7 @@ processList :: [AbstSynTree] -> Either ParseError WeakTerm
 processList [] = Right (WeakTermLit Unit)
 processList (a:as) = if isKeyword a
     then processStatement (a:as)
-    else foldr WeakTermApp <$> parse' a <*> mapM parse' as
+    else foldl WeakTermApp <$> parse' a <*> mapM parse' as
 
 isKeyword :: AbstSynTree -> Bool
 isKeyword = \case
