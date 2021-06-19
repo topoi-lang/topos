@@ -156,4 +156,6 @@ processStatement (first:rest) = case first of
             WeakTermFunDecl <$> checkName name <*> checkArgs args <*> parse' expr
         | otherwise -> Left DefunUnmetArity
 
+    -- TODO: Atom (Ident "enum")
+
     _ -> Left InvalidToken
