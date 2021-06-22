@@ -5,13 +5,15 @@
 {-# language OverloadedStrings #-}
 
 module Tokeniser (
-    sexp, Atom(..), AbstSynTree(..)
+    parseSexp, Atom(..), AbstSynTree(..)
 ) where
 
 import Data.Functor (($>))
 import GHC.Generics (Generic)
 import GHC.Word (Word8)
+import Control.Applicative (many)
 
+import Z.Data.Vector.Base            (Bytes)
 import Z.Data.Text                   (Text, Print)
 import qualified Z.Data.Text.Base    as T
 import qualified Z.Data.Parser       as P
@@ -23,7 +25,7 @@ data Atom
     = Ident  Text     -- | Atom, identifier, potentially keyword
     | Int    Integer  -- | Atom, number literal
     | String Text     -- | Atom, string literal
-    | Nil             -- | empty
+    | Nil             
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass Print
 
@@ -38,8 +40,9 @@ skipSpaces :: P.Parser ()
 skipSpaces = P.skipWhile ws
 {-# INLINABLE skipSpaces #-}
 
--- parseSExp :: Text -> Either P.ParseError SExpr
--- parseSExp = P.parse' (sexp <* skipSpaces <* P.endOfInput)
+-- | parses zero or many
+parseSexp :: Bytes -> Either P.ParseError [AbstSynTree]
+parseSexp = P.parse' (skipSpaces *> many sexp <* skipSpaces <* P.endOfInput)
 
 ws :: Word8 -> Bool
 ws w = w == TAB || w == SPACE || w == NEWLINE || w == CARRIAGE_RETURN

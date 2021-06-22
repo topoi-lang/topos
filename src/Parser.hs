@@ -6,12 +6,14 @@
 
 module Parser where
 
+import Z.Data.Vector.Base (Bytes)
 import GHC.Generics (Generic)
 import Z.Data.Text (Text, Print)
 
 import Tokeniser
     ( Atom (Ident, Int, String, Nil)
     , AbstSynTree (Atom, List)
+    , parseSexp
     )
 
 {-
@@ -103,7 +105,14 @@ data ParseError
     | NotValidName
     | NotValidArg
     | InvalidToken
+    | TokeniseError [Text]
     deriving (Show)
+
+-- NOTE: Enable OverloadedStrings so that Text can be coerced to Bytes in ghci
+parse :: Bytes -> Either ParseError [WeakTerm]
+parse srcBytes = case parseSexp srcBytes of
+    Left err -> Left (TokeniseError err)
+    Right as  -> mapM parse' as
 
 parse' :: AbstSynTree -> Either ParseError WeakTerm
 parse' (Atom a) = Right (processAtom a)

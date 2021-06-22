@@ -4,7 +4,7 @@ Topos is a learn-by-doing compiler project. This aims is to create a sustainable
 
 ### What I am trying to do
 - [x] S expression parser in Haskell
-- [ ] Parser that generate compiler workable AST
+- [x] Parser that generate compiler workable AST
     - accumulate the definitions per source unit (define / defun / lambda)
     - simple untyped lambda calculus operations (lam / app / let / var)
 - [ ] Typecheck monad
