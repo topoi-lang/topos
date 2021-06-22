@@ -2,3 +2,6 @@
 *.lock
 dist-newstyle
 topos.cabal
+.gitignore
+Cargo.lock
+target/
