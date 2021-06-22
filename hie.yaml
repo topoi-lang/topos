@@ -1,0 +1,7 @@
+cradle:
+  multi:
+    - path: "./"
+      config:
+        cradle:
+          cabal:
+            - path: "./app/Main.hs"

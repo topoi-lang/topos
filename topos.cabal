@@ -26,6 +26,14 @@ common haskell
       -Wno-missing-safe-haskell-mode
       -Wno-prepositive-qualified-module
 
+executable topos
+  hs-source-dirs: app
+  main-is: Main.hs
+  build-depends:
+    , base
+    , topos
+    , Z-IO
+
 library
   import: haskell
   hs-source-dirs: src
