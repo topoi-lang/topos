@@ -1,5 +1,7 @@
 # Topos
 
+[![Haskell CI](https://github.com/topoi-lang/topos/actions/workflows/haskell.yml/badge.svg?branch=main)](https://github.com/topoi-lang/topos/actions/workflows/haskell.yml)
+
 Topos is a learn-by-doing compiler project. This aims is to create a sustainable functional programming language to make programming more fun and more control, in a higher-level language manner.
 
 ### What I am trying to do
