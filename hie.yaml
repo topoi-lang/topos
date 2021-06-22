@@ -1,7 +1,7 @@
 cradle:
-  multi:
-    - path: "./"
-      config:
-        cradle:
-          cabal:
-            - path: "./app/Main.hs"
+  cabal:
+    - path: "app/Main.hs"
+      component: "topos:exe:topos"
+
+    - path: "src"
+      component: "lib:topos"
