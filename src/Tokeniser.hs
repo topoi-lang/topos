@@ -42,7 +42,7 @@ skipSpaces = P.skipWhile ws
 
 -- | parses zero or many
 parseSexp :: Bytes -> Either P.ParseError [AbstSynTree]
-parseSexp = P.parse' (skipSpaces *> many sexp <* skipSpaces <* P.endOfInput)
+parseSexp = P.parse' $ many (skipSpaces *> sexp <* skipSpaces) <* P.endOfInput
 
 ws :: Word8 -> Bool
 ws w = w == TAB || w == SPACE || w == NEWLINE || w == CARRIAGE_RETURN

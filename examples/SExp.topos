@@ -1,8 +1,8 @@
 
-(defun addOne x (+ x 1))
+(defun addOne x (add x 1))
 (addOne 100)
 
 (define answerToEverything (addOne 41))
 
 (define NumberThatGabenCannotCount 3)
-((lambda x (+ x 1)) NumberThatGabenCannotCount)
+((lambda x (add x 1)) NumberThatGabenCannotCount)
