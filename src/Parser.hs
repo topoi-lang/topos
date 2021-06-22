@@ -84,7 +84,7 @@ data Literal = Num Integer | Str Text | Unit
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass Print
 
-newtype Program = Program [WeakTerm] deriving (Show)
+newtype Program = Program [WeakTerm] deriving Show
 
 type Name = Text
 
@@ -106,7 +106,7 @@ data ParseError
     | NotValidArg
     | InvalidToken
     | TokeniseError [Text]
-    deriving (Show)
+    deriving Show
 
 -- NOTE: Enable OverloadedStrings so that Text can be coerced to Bytes in ghci
 parse :: Bytes -> Either ParseError [WeakTerm]
