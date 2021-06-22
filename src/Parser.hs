@@ -9,6 +9,7 @@ module Parser (parse) where
 import Z.Data.Vector.Base (Bytes)
 import GHC.Generics (Generic)
 import Z.Data.Text (Text, Print)
+import Data.Foldable (foldl')
 
 import Tokeniser
     ( Atom (Ident, Int, String, Nil)
@@ -128,7 +129,7 @@ processList :: [AbstSynTree] -> Either ParseError WeakTerm
 processList [] = Right (WeakTermLit Unit)
 processList (a:as) = if isKeyword a
     then processStatement (a:as)
-    else foldl WeakTermApp <$> parse' a <*> mapM parse' as
+    else foldl' WeakTermApp <$> parse' a <*> mapM parse' as
 
 isKeyword :: AbstSynTree -> Bool
 isKeyword = \case
