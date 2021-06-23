@@ -113,7 +113,7 @@ data ParseError
 parse :: Bytes -> Either ParseError [WeakTerm]
 parse srcBytes = case parseSexp srcBytes of
     Left err -> Left (TokeniseError err)
-    Right as  -> mapM parse' as
+    Right as  -> traverse parse' as
 
 parse' :: AbstSynTree -> Either ParseError WeakTerm
 parse' (Atom a) = Right (processAtom a)
@@ -129,7 +129,7 @@ processList :: [AbstSynTree] -> Either ParseError WeakTerm
 processList [] = Right (WeakTermLit Unit)
 processList (a:as) = if isKeyword a
     then processStatement (a:as)
-    else foldl' WeakTermApp <$> parse' a <*> mapM parse' as
+    else foldl' WeakTermApp <$> parse' a <*> traverse parse' as
 
 isKeyword :: AbstSynTree -> Bool
 isKeyword = \case
@@ -145,7 +145,7 @@ checkName _ = Left NotValidName
 
 checkArgs :: AbstSynTree -> Either ParseError [Name]
 checkArgs (Atom (Ident n)) = Right [n]
-checkArgs (List xs) = fmap concat $ mapM checkArgs xs
+checkArgs (List xs) = concat <$> traverse checkArgs xs
 checkArgs _ = Left NotValidArg
 
 processStatement :: [AbstSynTree] -> Either ParseError WeakTerm
