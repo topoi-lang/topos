@@ -18,23 +18,6 @@ jobs:
         ghc-version: '8.10.5'
         cabal-version: '3.4'
 
-    - name: Cache
-      uses: actions/cache@v1
-      env:
-        cache-name: cache-build
-      with:
-        path: ~/dist-newstyle
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
-
-    - name: Install dependencies
-      run: |
-        cabal update
-        cabal build --only-dependencies --enable-tests --enable-benchmarks
-
     - name: Set up Hlint
       uses: rwe/actions-hlint-setup@v1
       with:
@@ -45,6 +28,27 @@ jobs:
       with:
         path: '["src/", "app/"]'
         fail-on: warning
+
+    - run: cabal v2-update
+    
+    - run: cabal v2-freeze
+
+    - name: Cache
+      uses: actions/cache@v1
+      env:
+        cache-name: cache-build
+      with:
+        path: |
+          dist-newstyle
+          ~/.cabal/store
+        key: ${{ runner.os }}-{{ hashFiles('cabal.project.freeze') }}
+        restore-keys: |
+          ${{ runner.os }}-
+
+    - name: Install dependencies
+      run: |
+        cabal update
+        cabal build --only-dependencies --enable-tests --enable-benchmarks
 
     - name: Build
       run: cabal build --enable-tests --enable-benchmarks all
