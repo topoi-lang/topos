@@ -34,6 +34,18 @@ jobs:
       run: |
         cabal update
         cabal build --only-dependencies --enable-tests --enable-benchmarks
+
+    - name: Set up Hlint
+      uses: rwe/actions-hlint-setup@v1
+      with:
+        version: '3.3.1'
+
+    - name: Run Hlint
+      uses: rwe/actions-hlint-run@v2
+      with:
+        path: '["src/", "app/"]'
+        fail-on: warning
+
     - name: Build
       run: cabal build --enable-tests --enable-benchmarks all
     - name: Run tests
