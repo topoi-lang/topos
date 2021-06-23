@@ -86,7 +86,7 @@ atom = do
           | otherwise          -> P.fail' "unknown token"
 
 identifier :: P.Parser Text
-identifier = T.Text <$> P.takeWhile1 (\w -> isLower w || isUpper w) -- TODO: add symbol
+identifier = T.Text <$> P.takeWhile1 (\w -> isASCII w && w /= DOUBLE_QUOTE && w /= PAREN_LEFT && w /= PAREN_RIGHT && not (ws w) && not (isDigit w))
 
 -- | Make nested list become canonical, say, it maps `List [List [Atom Nil]]` to `Atom Nil`
 flattenAST :: AbstSynTree -> AbstSynTree
