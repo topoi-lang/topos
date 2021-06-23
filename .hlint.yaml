@@ -1,89 +1,65 @@
+# HLint configuration file
+# https://github.com/ndmitchell/hlint
+
+- arguments: [--color=auto, -XStrictData]
+
+# Blacklist some functions by default.
+- functions:
+  - {name: unsafePerformIO, within: []}
+  - {name: unsafeCoerce, within: []}
+  - {name: head, within: []}
+  - {name: tail, within: []}
+  - {name: init, within: []}
+  - {name: last, within: []}
+  - {name: fromJust, within: []}
+  - {name: decodeUtf8, within: [], message: "Use decodeUtf8' or decodeUtf8With lenientDecode"}
 
 # Replace a $ b $ c with a . b $ c
-- group: { name: dollar, enabled: true }
+- group: {name: dollar, enabled: true}
 
-- ignore: { name: Use <$> }
-- ignore: { name: Eta reduce }
+# Generalise map to fmap, ++ to <>
+- group: {name: generalise, enabled: true}
 
-- functions:
-  - {name: unsafeDupablePerformIO, within: []} # Unsafe
-  - {name: unsafeInterleaveIO, within: []} # Unsafe
-  - {name: unsafeFixIO, within: []} # Unsafe
-  - {name: unsafePerformIO, within: []} # Unsafe
+# Change the severity of the default group to warning
+- warn: {group: {name: default}}
 
-  # _VERY_ hard to get right, use the async library instead.
-  # See also https://github.com/informatikr/hedis/issues/165
-  - {name: forkIO, within: []}
-  # Mostly impossible to get right, rethink what you're doing entirely.
-  # See also https://www.reddit.com/r/haskell/comments/jsap9r/how_dangerous_is_forkprocess/
-  - {name: forkProcess, within: []}
+# Ignore the highly noisy module export list hint
+- ignore: {name: Use explicit module export list}
 
-  - {name: undefined, within: []} # Purposely fails. Deal with errors appropriately instead.
-  - {name: throw, within: []} # Don't throw from pure code, use throwIO instead.
-  - {name: Prelude.error, within: []}
+# Ignore some builtin hints
+- ignore: {name: Use mappend}
+- ignore: {name: Redundant do}
+- ignore: {name: Use lambda-case} # TODO: investigate whether cost-center analysis is better with lambda-case than it was
+- ignore: {name: Use fmap} # Ignored because map has better type inference.
 
-  - {name: Data.List.head, within: []} # Partial, use `listToMaybe` instead.
-  - {name: Data.List.tail, within: []} # Partial
-  - {name: Data.List.init, within: []} # Partial
-  - {name: Data.List.last, within: []} # Partial
-  - {name: 'Data.List.!!', within: []} # Partial
-  - {name: toEnum, within: []} # Partial
+# Change the severity of hints we don’t want to fail CI for
+- suggest: {name: Eta reduce}
 
-  - {name: until, within: []} # Really confusing, use 'when' instead.
+# While I think DerivingStrategies is good, it's too noisy to suggest by default
+- ignore:
+    name: Use DerivingStrategies
 
-  - {name: nub, within: []} # O(n^2)
+# Our customized warnings
 
-  - {name: foldl, within: []} # Lazy. Use foldl' instead.
-  - {name: sum, within: []} # Lazy accumulator
-  - {name: product, within: []} # Lazy accumulator
+# AMP fallout
+- warning: {lhs: mapM, rhs: traverse, name: Generalize mapM}
+- warning: {lhs: mapM_, rhs: traverse_, name: Generalize mapM_}
+- warning: {lhs: forM, rhs: for, name: Generalize forM}
+- warning: {lhs: forM_, rhs: for_, name: Generalize forM_}
+- warning: {lhs: sequence, rhs: sequenceA, name: Generalize sequence}
+- warning: {lhs: sequence_, rhs: sequenceA_, name: Generalize sequence_}
+- warning: {lhs: return, rhs: pure, name: Avoid return}
 
-  # Functions involving division
-  - {name: quot, within: []} # Partial, see https://github.com/NorfairKing/haskell-WAT#num-int
-  - {name: div, within: []}
-  - {name: rem, within: []}
-  - {name: mod, within: []}
-  - {name: quotRem, within: []}
-  - {name: divMod, within: []}
+# Terms
+- warning: {lhs: termFAnnotation . unTerm, rhs: termAnnotation, name: Use termAnnotation}
+- warning: {lhs: termFOut . unTerm, rhs: termOut, name: Use termOut}
+- warning: {lhs: project . termOut, rhs: projectTerm, name: Use projectTerm}
 
-  # Does unexpected things, see
-  # https://github.com/NorfairKing/haskell-WAT#real-double
-  - {name: realToFrac, within: []}
+# Conveniences
+- warning: {lhs: maybe a pure, rhs: maybeM a, name: Use maybeM}
+- warning: {lhs: either (const a) id, rhs: fromRight a, name: use fromRight}
+- warning: {lhs: either id (const a), rhs: fromLeft a, name: use fromLeft}
 
-  # Don't use string for command-line output.
-  - {name: System.IO.putChar, within: []}
-  - {name: System.IO.putStr, within: []}
-  - {name: System.IO.putStrLn, within: []}
-  - {name: System.IO.print, within: []}
-
-  # Don't use string for command-line input either.
-  - {name: System.IO.getChar, within: []}
-  - {name: System.IO.getLine, within: []}
-  - {name: System.IO.getContents, within: []} # Does lazy IO.
-  - {name: System.IO.interact, within: []}
-  - {name: System.IO.readIO, within: []}
-  - {name: System.IO.readLn, within: []}
-
-  # Don't use strings to interact with files
-  - {name: System.IO.readFile, within: []}
-  - {name: System.IO.writeFile, within: []}
-  - {name: System.IO.appendFile, within: []}
-
-  # Can succeed in dev, but fail in prod, because of encoding guessing
-  # It's also Lazy IO.
-  # See https://www.snoyman.com/blog/2016/12/beware-of-readfile/ for more info.
-  - {name: Data.Text.IO.readFile, within: []}
-  - {name: Data.Text.IO.Lazy.readFile, within: []}
-
-  - {name: fromJust, within: []} # Partial
-
-  # Does silent truncation:
-  # > fromIntegral (300 :: Word) :: Word8
-  # 44
-  - {name: fromIntegral, within: []}
-
-
-  - {name: 'read', within: []} # Partial, use `Text.Read.readMaybe` instead.
-  
-  # Deprecated, use `pure` instead.
-  # See https://gitlab.haskell.org/ghc/ghc/-/wikis/proposal/monad-of-no-return
-  - {name: 'return', within: []}
+# Applicative style
+- warning: {lhs: f <$> pure a <*> b, rhs: f a <$> b, name: Avoid redundant pure}
+- warning: {lhs: f <$> pure a <* b, rhs: f a <$ b, name: Avoid redundant pure}
