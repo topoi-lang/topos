@@ -4,7 +4,7 @@
 {-# language OverloadedStrings #-}
 {-# language LambdaCase #-}
 
-module Parser (parse) where
+module Parser (parse, Literal(..)) where
 
 import Z.Data.Vector.Base (Bytes)
 import GHC.Generics (Generic)
