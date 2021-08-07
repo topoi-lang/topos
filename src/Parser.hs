@@ -4,12 +4,15 @@
 {-# language OverloadedStrings #-}
 {-# language LambdaCase #-}
 
-module Parser (parse, Literal(..)) where
+module Parser (parse, Literal(..), WeakTerm(..), Name, TypeLiteral(..)) where
 
+import Prelude hiding (tail)
 import Z.Data.Vector.Base (Bytes)
 import GHC.Generics (Generic)
 import Z.Data.Text (Text, Print)
 import Data.Foldable (foldl')
+
+import Z.Data.Text.Extra (isPrefixOf, tail)
 
 import Tokeniser
     ( Atom (Ident, Int, String, Nil)
@@ -85,7 +88,13 @@ application = { name+ }
     (type x (Int Int Int))
 -}
 
-data TypeLiteral = TyInt | TyBool | TCon Name | TyClosure TypeLiteral TypeLiteral
+data TypeLiteral
+    = TyBottom
+    | TyStr
+    | TyInt
+    | TyBool
+    | TCon Name
+    | TyClosure TypeLiteral TypeLiteral
     deriving (Eq, Ord, Show, Generic)
     deriving anyclass Print
 
@@ -164,6 +173,9 @@ checkType :: AbstSynTree -> Either ParseError TypeLiteral
 checkType (Atom (Ident "Int")) = Right TyInt
 checkType (Atom (Ident "Bool")) = Right TyBool
 checkType (List (x:xs)) = foldr TyClosure <$> checkType x <*> traverse checkType xs
+checkType (Atom (Ident x)) = if "'" `isPrefixOf` x
+    then Right $ TCon (tail x)
+    else Left TypeSignatureError
 checkType _ = Left TypeSignatureError
 
 processStatement :: [AbstSynTree] -> Either ParseError WeakTerm
