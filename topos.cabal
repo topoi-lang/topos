@@ -32,7 +32,7 @@ executable topos
   build-depends:
     , base
     , topos
-    , Z-IO
+    , Z-Data >= 1.2.0
 
 library
   import: haskell
@@ -42,7 +42,7 @@ library
   other-modules: Paths_topos
   build-depends:
     , base
-    , Z-Data
+    , Z-Data >= 1.2.0
 
 source-repository head
   type: git

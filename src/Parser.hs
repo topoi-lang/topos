@@ -109,8 +109,7 @@ data ParseError
     | TokeniseError [Text]
     deriving Show
 
--- NOTE: Enable OverloadedStrings so that Text can be coerced to Bytes in ghci
-parse :: Bytes -> Either ParseError [WeakTerm]
+parse :: Byte -> Either ParseError [WeakTerm]
 parse srcBytes = case parseSexp srcBytes of
     Left err -> Left (TokeniseError err)
     Right as  -> traverse parse' as
